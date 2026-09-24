@@ -137,7 +137,7 @@ void win_recents_push(void) {
 
   ButtonMap m;
   memset(&m, 0, sizeof(m));
-  m.back_icon = IC_CANCEL;
+  m.back_icon = IC_UNDO;
   m.b[BTN_UP] = (ButtonDef){ IC_UP, IC_NONE, ACT_PREV, 0, false };
   m.b[BTN_DOWN] = (ButtonDef){ IC_DOWN, IC_NONE, ACT_NEXT_ITEM, 0, false };
   m.b[BTN_SELECT] = (ButtonDef){ IC_CHECK, IC_NONE, ACT_APPLY, 0, false };

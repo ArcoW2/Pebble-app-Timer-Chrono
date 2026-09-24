@@ -134,6 +134,15 @@ static void draw_action(const Pen *p, uint8_t id) {
     case IC_BACK:
       ln(p, 30, 50, 92, 50); tri(p, 40, 22, 5, 50, 40, 78);
       break;
+    case IC_UNDO: {  // gentle counter-clockwise arc with a head on the left
+      GPoint a = pt(p, 10, 18), b = pt(p, 90, 98);
+      graphics_context_set_stroke_width(p->ctx, p->w);
+      graphics_draw_arc(p->ctx, GRect(a.x, a.y, b.x - a.x, b.y - a.y),
+                        GOvalScaleModeFitCircle, DEG_TO_TRIGANGLE(268),
+                        DEG_TO_TRIGANGLE(432));
+      tri(p, 0, 48, 28, 48, 14, 76);
+      break;
+    }
     case IC_PLUS:  ln(p, 50, 10, 50, 90); ln(p, 10, 50, 90, 50); break;
     case IC_MINUS: ln(p, 10, 50, 90, 50); break;
     case IC_CHECK: ln(p, 8, 55, 38, 85); ln(p, 38, 85, 92, 18); break;

@@ -55,6 +55,20 @@ static struct {
 static void editor_confirm(void);
 static void editor_cancel(void);
 
+// During setup the colours follow the mode being chosen, not the mode the
+// counter is still in, so the editor already looks like what you selected.
+static uint8_t palette_mode(void) {
+  return (s_ed.kind == ED_SETUP_MODE || s_ed.kind == ED_SETUP_VALUE)
+             ? s_ed.mode_sel
+             : g_counter.mode;
+}
+
+static void apply_palette(void) {
+  colors_for_mode(palette_mode(), &s_palette);
+  if (s_window) window_set_background_color(s_window, s_palette.bg);
+  buttons_set_colors(&s_buttons, s_palette.fg, s_palette.accent);
+}
+
 // ==== FIELDS <-> VALUE ====
 
 static int64_t field_unit_ms(uint8_t kind) {
@@ -325,7 +339,7 @@ static void apply_button_map(void) {
   ButtonMap m;
   memset(&m, 0, sizeof(m));
   bool steps_back = (s_ed.kind != ED_SETUP_MODE && s_ed.focus > 0);
-  m.back_icon = steps_back ? IC_BACK : IC_CANCEL;
+  m.back_icon = steps_back ? IC_BACK : IC_UNDO;
   m.back_act = ACT_CANCEL;
   if (s_ed.kind == ED_SETUP_MODE) {
     m.b[BTN_UP] = (ButtonDef){ IC_UP, IC_NONE, ACT_UP, 0, false };
@@ -369,6 +383,7 @@ static void focus_next(void) {
 static void enter_value_step(void) {
   s_ed.kind = ED_SETUP_VALUE;
   s_ed.focus = 0;
+  apply_palette();
   switch (s_ed.mode_sel) {
     case MODE_UP:
       snprintf(s_ed.title, sizeof(s_ed.title), "Start offset");
@@ -456,6 +471,7 @@ static void editor_cancel(void) {
   if (s_ed.kind == ED_SETUP_VALUE) {  // back to the mode step
     s_ed.kind = ED_SETUP_MODE;
     snprintf(s_ed.title, sizeof(s_ed.title), "Mode");
+    apply_palette();
     apply_button_map();
     layer_mark_dirty(s_canvas);
     return;
@@ -469,6 +485,7 @@ static void on_action(uint8_t action, int64_t press_ms, void *ctx) {
     case ACT_UP:
       if (s_ed.kind == ED_SETUP_MODE) {
         s_ed.mode_sel = (uint8_t)((s_ed.mode_sel + MODE_COUNT - 1) % MODE_COUNT);
+        apply_palette();
         layer_mark_dirty(s_canvas);
       } else {
         change_field(+1);
@@ -477,6 +494,7 @@ static void on_action(uint8_t action, int64_t press_ms, void *ctx) {
     case ACT_DOWN:
       if (s_ed.kind == ED_SETUP_MODE) {
         s_ed.mode_sel = (uint8_t)((s_ed.mode_sel + 1) % MODE_COUNT);
+        apply_palette();
         layer_mark_dirty(s_canvas);
       } else {
         change_field(-1);
@@ -504,6 +522,7 @@ static void on_tap(GPoint where, void *ctx) {
       GRect r = mode_row_rect(i);
       if (grect_contains_point(&r, &where)) {
         s_ed.mode_sel = i;
+        apply_palette();
         layer_mark_dirty(s_canvas);
         return;
       }
@@ -578,7 +597,7 @@ static void window_unload(Window *window) {
 }
 
 static void create_and_push(void) {
-  colors_for_mode(g_counter.mode, &s_palette);
+  colors_for_mode(palette_mode(), &s_palette);
   s_window = window_create();
   window_set_background_color(s_window, s_palette.bg);
   window_set_window_handlers(s_window, (WindowHandlers){
@@ -591,7 +610,7 @@ static void create_and_push(void) {
   layer_set_update_proc(s_canvas, canvas_update_proc);
   layer_add_child(root, s_canvas);
   buttons_init(&s_buttons, s_window, on_action, NULL);
-  buttons_set_colors(&s_buttons, s_palette.fg, s_palette.accent);
+  apply_palette();
   s_ed.check_rect = GRect((layout_w() - layout_hint_w()) / 2 - 27, layout_h() - 46,
                           54, 34);
   apply_button_map();

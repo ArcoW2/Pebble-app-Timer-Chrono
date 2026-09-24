@@ -63,9 +63,9 @@ static void draw_segments(GContext *ctx, uint16_t mask, GRect cell, int16_t t,
   int16_t top = cell.origin.y + t / 2;
   int16_t mid = cell.origin.y + cell.size.h / 2;
   int16_t bot = cell.origin.y + cell.size.h - 1 - t / 2;
-  // Gap between segments within a digit: tighter on thick strokes, where
-  // the bevelled ends already separate the corners.
-  int16_t g = (t >= 6) ? max_i16(0, t / 4 - 1) : max_i16(1, t / 4);
+  // Gap between segments within a digit: fixed, so a big digit does not
+  // turn into scattered strokes.
+  const int16_t g = 1;
   int16_t cx = cell.origin.x + cell.size.w / 2;
 
   // Segment centres stay put; only the drawn thickness varies, so a ghost

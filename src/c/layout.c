@@ -43,8 +43,9 @@ bool layout_fit_digits(uint8_t wide, uint8_t narrow, int16_t avail_w, int16_t ma
   if (wide == 0) return false;
   for (int16_t h = max_h; h >= min_h; h--) {
     int16_t t = stroke_for(max_h, h);
-    // Cell spacing: thin segments can sit closer without merging.
-    int16_t sp = (t <= 4) ? 0 : max16(1, t / 3);
+    // A stroke spans its whole cell, so this spacing is the visible gap
+    // between digits. Fixed at 1 px: it must not grow with the digit size.
+    int16_t sp = 1;
     int16_t wmin = h * 36 / 100;   // narrower cells before giving up height
     int16_t wmax = h * 60 / 100;
     int16_t nw = max16(t + 2, h * 12 / 100);

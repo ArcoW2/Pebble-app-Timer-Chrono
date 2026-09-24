@@ -4,7 +4,7 @@
 // changed rarely and are painful to edit on a 200x228 screen. Everything
 // that matters while the timer runs stays on the watch.
 var MODES = [
-  { key: 'U', title: 'Count up', lines: 3 },
+  { key: 'U', title: 'Count up', lines: 4 },
   { key: 'F', title: 'Count down for', lines: 4 },
   { key: 'T', title: 'Count down until', lines: 4 }
 ];

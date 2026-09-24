@@ -171,7 +171,7 @@ static void on_select(MenuLayer *menu, MenuIndex *index, void *c) {
 // ==== HINTS ====
 
 static void hints_update_proc(Layer *layer, GContext *ctx) {
-  int16_t x = SCREEN_W - HINT_W + 4;
+  int16_t x = layout_w() - layout_hint_w() + 4;
   icon_draw(ctx, IC_UP, GRect(x, 31, 14, 14), s_palette.fg);
   icon_draw(ctx, IC_EDIT, GRect(x, 107, 14, 14), s_palette.fg);
   icon_draw(ctx, IC_DOWN, GRect(x, 183, 14, 14), s_palette.fg);
@@ -196,7 +196,7 @@ void win_settings_push(void) {
   window_set_window_handlers(s_window, (WindowHandlers){ .unload = window_unload });
   Layer *root = window_get_root_layer(s_window);
 
-  s_menu = menu_layer_create(GRect(0, 0, SCREEN_W - HINT_W, SCREEN_H));
+  s_menu = menu_layer_create(GRect(0, 0, layout_w() - layout_hint_w(), layout_h()));
   menu_layer_set_callbacks(s_menu, NULL, (MenuLayerCallbacks){
     .get_num_sections = get_num_sections,
     .get_num_rows = get_num_rows,

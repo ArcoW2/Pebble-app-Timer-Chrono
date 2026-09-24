@@ -58,12 +58,12 @@ static uint8_t icon_for_mode(uint8_t mode) {
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_text_color(ctx, s_palette.accent);
   graphics_draw_text(ctx, "Recent", fonts_get_system_font(HEAD_FONT),
-                     GRect(2, 0, SCREEN_W - HINT_W - 4, HEADER_H), GTextOverflowModeFill,
+                     GRect(2, 0, layout_w() - layout_hint_w() - 4, HEADER_H), GTextOverflowModeFill,
                      GTextAlignmentLeft, NULL);
   if (s_count == 0) {
     graphics_context_set_text_color(ctx, s_palette.dim);
     graphics_draw_text(ctx, "Nothing yet", fonts_get_system_font(ROW_FONT),
-                       GRect(2, HEADER_H + 10, SCREEN_W - HINT_W - 4, ROW_H),
+                       GRect(2, HEADER_H + 10, layout_w() - layout_hint_w() - 4, ROW_H),
                        GTextOverflowModeFill, GTextAlignmentCenter, NULL);
     return;
   }
@@ -72,7 +72,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     bool sel = (i == s_sel);
     if (sel) {
       graphics_context_set_fill_color(ctx, s_palette.accent);
-      graphics_fill_rect(ctx, GRect(2, y, SCREEN_W - HINT_W - 6, ROW_H - 2), 4,
+      graphics_fill_rect(ctx, GRect(2, y, layout_w() - layout_hint_w() - 6, ROW_H - 2), 4,
                          GCornersAll);
     }
     GColor fg = sel ? s_palette.bg : s_palette.fg;
@@ -81,7 +81,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     describe(&s_items[i], text, sizeof(text));
     graphics_context_set_text_color(ctx, fg);
     graphics_draw_text(ctx, text, fonts_get_system_font(ROW_FONT),
-                       GRect(28, y + 2, SCREEN_W - HINT_W - 34, ROW_H),
+                       GRect(28, y + 2, layout_w() - layout_hint_w() - 34, ROW_H),
                        GTextOverflowModeFill, GTextAlignmentLeft, NULL);
   }
 }

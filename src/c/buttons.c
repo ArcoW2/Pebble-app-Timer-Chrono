@@ -8,7 +8,13 @@
 #include "layout.h"
 
 #define ICON 14
-static const int16_t ZONE_CY[BTN_COUNT] = { 38, 114, 190 };
+
+// Button zones sit at 1/6, 1/2 and 5/6 of the screen height, which matches
+// the physical buttons on every rectangular Pebble.
+static int16_t zone_cy(int i) {
+  int16_t h = layout_h();
+  return (int16_t)(i == 0 ? h / 6 : (i == 1 ? h / 2 : h * 5 / 6));
+}
 
 // ==== HELPERS ====
 
@@ -55,10 +61,10 @@ static void draw_hold_arrow(GContext *ctx, int16_t x, int16_t y, GColor c,
 
 static void hints_update_proc(Layer *layer, GContext *ctx) {
   Buttons *b = *(Buttons **)layer_get_data(layer);
-  int16_t x = SCREEN_W - HINT_W + (HINT_W - ICON) / 2;
+  int16_t x = layout_w() - layout_hint_w() + (layout_hint_w() - ICON) / 2;
   for (int i = 0; i < BTN_COUNT; i++) {
     const ButtonDef *d = &b->map.b[i];
-    int16_t cy = ZONE_CY[i];
+    int16_t cy = zone_cy(i);
     bool pressed = (b->held == i);
     GColor sc = pressed ? b->accent : b->fg;
     if (d->short_icon && d->long_icon) {

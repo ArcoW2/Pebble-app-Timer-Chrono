@@ -169,22 +169,25 @@ static void test_lines_and_layout(void) {
     CHECK(layout_compute(&p.mode[m], f, &l));
     for (int i = 0; i < l.n; i++) {
       CHECK(l.g[i].text_x >= l.g[i].gutter_w);
-      CHECK(l.g[i].y >= 0 && l.g[i].y + l.g[i].h <= SCREEN_H);
+      CHECK(l.g[i].y >= 0 && l.g[i].y + l.g[i].h <= layout_h());
     }
   }
-  // Four L lines never fit.
+  // Four L lines do not fit as asked, so the tallest ones step down.
   ModeLayout big;
   settings_mode_layout_default(MODE_UP, &big);
   big.nlines = 4;
   for (int i = 0; i < 4; i++) big.lines[i] = (LineCfg){ SRC_TOTAL, SIZE_L, FMT_MS, 0 };
   uint8_t f4[4] = { FMT_MS, FMT_MS, FMT_MS, FMT_MS };
   Layout l;
-  CHECK(!layout_compute(&big, f4, &l) && l.error == LAYOUT_TOO_TALL);
+  CHECK(layout_compute(&big, f4, &l));
+  int stepped = 0;
+  for (int i = 0; i < 4; i++) if (l.g[i].size != SIZE_L) stepped++;
+  CHECK(stepped > 0);
 
   // Two L lines fit.
   big.nlines = 2;
   CHECK(layout_compute(&big, f4, &l));
-  CHECK(l.g[0].y - 0 == SCREEN_H - (l.g[1].y + l.g[1].h));  // centred
+  CHECK(l.g[0].y - 0 == layout_h() - (l.g[1].y + l.g[1].h));  // centred
 
   // Phone decode round trip with defaults.
   uint8_t blob[PHONE_CFG_BYTES];
@@ -279,13 +282,44 @@ static void test_sign_cell_width(void) {
   CHECK(layout_compute(&ml, f, &l));
   CHECK(l.g[0].dg_sign.w < l.g[0].dg.w);        // narrower, not shorter
   CHECK(l.g[0].dg_sign.h == l.g[0].dg.h);
-  CHECK(l.g[0].text_w_sign <= SCREEN_W - HINT_W - l.g[0].gutter_w);
+  CHECK(l.g[0].text_w_sign <= layout_w() - layout_hint_w() - l.g[0].gutter_w);
 
   LineText t;
   format_line(&t, FMT_HMS, 1000, true, 1000, COL_FG);
   CHECK(!format_text_needs_sign(&t));
   format_line(&t, FMT_HMS, -1000, true, 1000, COL_RED);
   CHECK(format_text_needs_sign(&t));            // overrun shows the '+'
+}
+
+// The same layouts on a 144x168 watch (basalt, flint, diorite).
+static void test_small_screen(void) {
+  layout_set_screen(144, 168);
+  PhoneSettings p;
+  settings_phone_defaults(&p);
+  for (int m = 0; m < MODE_COUNT; m++) {
+    uint8_t f[MAX_LINES];
+    for (int i = 0; i < p.mode[m].nlines; i++) {
+      f[i] = lines_worst_format(p.mode[m].lines[i].source, p.mode[m].lines[i].format,
+                                (Mode)m);
+    }
+    Layout l;
+    CHECK(layout_compute(&p.mode[m], f, &l));
+    for (int i = 0; i < l.n; i++) {
+      CHECK(l.g[i].y >= 0 && l.g[i].y + l.g[i].h <= 168);
+      CHECK(l.g[i].text_x >= l.g[i].gutter_w);
+    }
+  }
+  // An XL line cannot survive on a short screen; it must step down, not fail.
+  ModeLayout ml;
+  memset(&ml, 0, sizeof(ml));
+  ml.nlines = 2;
+  ml.lines[0] = (LineCfg){ SRC_TOTAL, SIZE_XL, FMT_MS, 0 };
+  ml.lines[1] = (LineCfg){ SRC_CUR_LAP, SIZE_XL, FMT_MS, 0 };
+  uint8_t f[2] = { FMT_MS, FMT_MS };
+  Layout l;
+  CHECK(layout_compute(&ml, f, &l));
+  CHECK(l.g[0].size != SIZE_XL || l.g[1].size != SIZE_XL);
+  layout_set_screen(200, 228);   // back to emery for the other tests
 }
 
 int main(void) {
@@ -298,6 +332,7 @@ int main(void) {
   test_auto_format();
   test_size_step_down();
   test_sign_cell_width();
+  test_small_screen();
   printf("%d passed, %d failed\n", s_pass, s_fail);
   return s_fail ? 1 : 0;
 }

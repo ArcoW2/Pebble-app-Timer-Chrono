@@ -21,9 +21,7 @@
 #define INFO_FONT_KEY  "RESOURCE_ID_GOTHIC_14"
 #define MAX_FIELDS     4
 #define DOUBLE_TAP_WINDOW_MS 300
-#define MODE_ROW_Y0    40
-#define MODE_ROW_H     42
-#define MODE_ROW_STEP  46
+
 #define MODE_FONT_KEY  "RESOURCE_ID_GOTHIC_24_BOLD"
 
 typedef enum { ED_SETUP_MODE = 0, ED_SETUP_VALUE, ED_RUNNING, ED_VALUE } EdKind;
@@ -127,22 +125,23 @@ static void build_until_fields(void) {
 // screen, so what you set looks like what you will read.
 static int8_t s_cell_field[MAX_CELLS];  // which field a cell belongs to, -1 = none
 
-static void build_text(LineText *out) {
+// Builds the cells for fields [from, to), keeping a map from cell to field.
+static void build_text(LineText *out, uint8_t from, uint8_t to, int8_t *map) {
   memset(out, 0, sizeof(*out));
-  memset(s_cell_field, -1, sizeof(s_cell_field));
+  memset(map, -1, MAX_CELLS * sizeof(int8_t));
   uint8_t n = 0;
-  for (uint8_t i = 0; i < s_ed.nfields; i++) {
+  for (uint8_t i = from; i < to && i < s_ed.nfields; i++) {
     if (s_ed.fkind[i] == FLD_DAYOFF) continue;
-    if (i > 0 && s_ed.fkind[i - 1] != FLD_DAYS) {
+    if (i > from && s_ed.fkind[i - 1] != FLD_DAYS) {
       out->cells[n++] = (Cell){ ':', CELL_SEP, 0 };
     }
     uint8_t flags = (s_ed.focus == i) ? 0 : CF_DIM;
-    s_cell_field[n] = (int8_t)i;
+    map[n] = (int8_t)i;
     out->cells[n++] = (Cell){ (char)('0' + s_ed.fval[i] / 10), CELL_DIGIT, flags };
-    s_cell_field[n] = (int8_t)i;
+    map[n] = (int8_t)i;
     out->cells[n++] = (Cell){ (char)('0' + s_ed.fval[i] % 10), CELL_DIGIT, flags };
     if (s_ed.fkind[i] == FLD_DAYS) {
-      s_cell_field[n] = (int8_t)i;
+      map[n] = (int8_t)i;
       out->cells[n++] = (Cell){ 'd', CELL_DIGIT, flags };
     }
   }
@@ -173,13 +172,17 @@ static bool below_running(void) {
 static void draw_info(GContext *ctx, const char *text, int16_t y, GColor color) {
   graphics_context_set_text_color(ctx, color);
   graphics_draw_text(ctx, text, fonts_get_system_font(INFO_FONT_KEY),
-                     GRect(4, y, SCREEN_W - HINT_W - 8, 20), GTextOverflowModeFill,
+                     GRect(4, y, layout_w() - layout_hint_w() - 8, 20), GTextOverflowModeFill,
                      GTextAlignmentCenter, NULL);
 }
 
 static GRect mode_row_rect(uint8_t index) {
-  return GRect(4, (int16_t)(MODE_ROW_Y0 + index * MODE_ROW_STEP),
-               SCREEN_W - HINT_W - 8, MODE_ROW_H);
+  int16_t top = layout_h() * 18 / 100;
+  int16_t avail = layout_h() - top - layout_h() / 5;   // leave room below
+  int16_t step = avail / MODE_COUNT;
+  if (step > 46) step = 46;
+  int16_t rh = step - 4;
+  return GRect(4, (int16_t)(top + index * step), layout_w() - layout_hint_w() - 8, rh);
 }
 
 static void draw_mode_options(GContext *ctx) {
@@ -193,10 +196,13 @@ static void draw_mode_options(GContext *ctx) {
       graphics_fill_rect(ctx, row, 6, GCornersAll);
     }
     GColor fg = sel ? s_palette.bg : s_palette.fg;
-    icon_draw(ctx, ICONS[i], GRect(10, row.origin.y + 9, 24, 24), fg);
+    int16_t isz = row.size.h > 34 ? 24 : 18;
+    icon_draw(ctx, ICONS[i], GRect(10, row.origin.y + (row.size.h - isz) / 2, isz, isz),
+              fg);
     graphics_context_set_text_color(ctx, fg);
     graphics_draw_text(ctx, NAMES[i], fonts_get_system_font(MODE_FONT_KEY),
-                       GRect(42, row.origin.y + 4, SCREEN_W - HINT_W - 48, 32),
+                       GRect(42, row.origin.y + (row.size.h - 26) / 2,
+                             layout_w() - layout_hint_w() - 48, 30),
                        GTextOverflowModeFill, GTextAlignmentLeft, NULL);
   }
 }
@@ -213,42 +219,71 @@ static void draw_check(GContext *ctx) {
   icon_draw(ctx, IC_CHECK, inner, focused ? s_palette.bg : s_palette.fg);
 }
 
-static void draw_value_editor(GContext *ctx) {
+// Draws one row of fields and records where each field landed, for taps.
+static int16_t draw_row(GContext *ctx, uint8_t from, uint8_t to, int16_t y,
+                        int16_t max_h, const SegColors *colors, DigitGeom *dg) {
+  int8_t map[MAX_CELLS];
   LineText t;
-  build_text(&t);
+  build_text(&t, from, to, map);
+  if (t.n == 0) return 0;
+
   uint8_t wide, narrow;
   measure(&t, &wide, &narrow);
-  int16_t avail = SCREEN_W - HINT_W - 8;
-  if (!layout_fit_digits(wide, narrow, avail, 52, 18, &s_ed.dg)) return;
+  int16_t avail = layout_w() - layout_hint_w() - 8;
+  if (!layout_fit_digits(wide, narrow, avail, max_h, 14, dg)) return 0;
 
-  int16_t w = layout_text_width(wide, narrow, &s_ed.dg);
+  int16_t w = layout_text_width(wide, narrow, dg);
   int16_t x = 4 + (avail - w) / 2;
-  int16_t y = 56;
+  int16_t cx = x;
+  for (uint8_t i = 0; i < t.n; i++) {
+    int16_t cw = (t.cells[i].kind == CELL_SEP) ? dg->narrow_w : dg->w;
+    int8_t f = map[i];
+    if (f >= 0 && f < (int8_t)s_ed.nfields) {
+      if (s_ed.frect[f].size.w == 0) s_ed.frect[f] = GRect(cx, y, cw, dg->h);
+      else s_ed.frect[f].size.w = cx + cw - s_ed.frect[f].origin.x;
+    }
+    cx += cw + dg->spacing;
+  }
+  segment_draw_text(ctx, &t, GPoint(x, y), dg, colors);
+
+  if (s_ed.focus >= from && s_ed.focus < to && s_ed.frect[s_ed.focus].size.w > 0) {
+    GRect f = s_ed.frect[s_ed.focus];   // dim vs lit alone is too subtle
+    graphics_context_set_fill_color(ctx, s_palette.accent);
+    graphics_fill_rect(ctx, GRect(f.origin.x, y + dg->h + 3, f.size.w, 3), 1,
+                       GCornersAll);
+  }
+  return dg->h;
+}
+
+static void draw_value_editor(GContext *ctx) {
   SegColors colors = {
     .lit = s_palette.fg,
     .dim = s_palette.dim,
     .ghost = s_palette.ghost,
     .ghost_level = 0,   // every digit matters while editing
   };
-  // Remember where each field sits, for taps.
   for (uint8_t i = 0; i < s_ed.nfields; i++) s_ed.frect[i] = GRect(0, 0, 0, 0);
-  int16_t cx = x;
-  for (uint8_t i = 0; i < t.n; i++) {
-    int16_t cw = (t.cells[i].kind == CELL_SEP) ? s_ed.dg.narrow_w : s_ed.dg.w;
-    int8_t f = s_cell_field[i];
-    if (f >= 0 && f < (int8_t)s_ed.nfields) {
-      if (s_ed.frect[f].size.w == 0) s_ed.frect[f] = GRect(cx, y, cw, s_ed.dg.h);
-      else s_ed.frect[f].size.w = cx + cw - s_ed.frect[f].origin.x;
-    }
-    cx += cw + s_ed.dg.spacing;
+
+  // Days get their own row above, so the hours, minutes and seconds below
+  // can use the full width and a much larger digit size.
+  bool has_days = (s_ed.nfields > 0 && s_ed.fkind[0] == FLD_DAYS);
+  int16_t top = layout_h() * 22 / 100;
+  int16_t bottom = s_ed.check_rect.origin.y - 10;
+  int16_t space = bottom - top;
+  int16_t y = top;
+
+  if (has_days) {
+    int16_t days_h = space / 4;
+    if (days_h > 34) days_h = 34;
+    DigitGeom dg;
+    int16_t drawn = draw_row(ctx, 0, 1, y, days_h, &colors, &dg);
+    y += drawn + 10;
+    space -= drawn + 10;
   }
-  segment_draw_text(ctx, &t, GPoint(x, y), &s_ed.dg, &colors);
-  if (s_ed.focus < s_ed.nfields && s_ed.frect[s_ed.focus].size.w > 0) {
-    GRect f = s_ed.frect[s_ed.focus];   // dim vs lit alone is too subtle
-    graphics_context_set_fill_color(ctx, s_palette.accent);
-    graphics_fill_rect(ctx, GRect(f.origin.x, y + s_ed.dg.h + 3, f.size.w, 3), 1,
-                       GCornersAll);
-  }
+  int16_t main_h = space - 6;
+  if (main_h > 68) main_h = 68;
+  draw_row(ctx, has_days ? 1 : 0, s_ed.nfields, y, main_h, &colors, &s_ed.dg);
+  int16_t below = y + s_ed.dg.h + 4;
 
   if (s_ed.kind == ED_SETUP_VALUE && g_counter.mode == MODE_DOWN_UNTIL) {
     static char line[40];
@@ -258,7 +293,7 @@ static void draw_value_editor(GContext *ctx) {
     char when[24];
     strftime(when, sizeof(when), "%a %d %b", localtime(&t_end));
     snprintf(line, sizeof(line), "+%d d  %s", field_get(FLD_DAYOFF), when);
-    draw_info(ctx, line, y + s_ed.dg.h + 4, s_palette.fg);
+    draw_info(ctx, line, below, s_palette.fg);
   }
   if (s_ed.kind == ED_RUNNING) {
     static char line[40];
@@ -266,9 +301,9 @@ static void draw_value_editor(GContext *ctx) {
     if (rem < 0) rem = 0;
     snprintf(line, sizeof(line), "running %d:%02d:%02d", (int)(rem / 3600000),
              (int)((rem / 60000) % 60), (int)((rem / 1000) % 60));
-    draw_info(ctx, line, 30, s_palette.fg);
+    draw_info(ctx, line, layout_h() * 13 / 100, s_palette.fg);
     if (below_running()) {
-      draw_info(ctx, "below running time: OK stops", y + s_ed.dg.h + 4, s_palette.red);
+      draw_info(ctx, "below running time: OK stops", below, s_palette.red);
     }
   }
   draw_check(ctx);
@@ -277,7 +312,7 @@ static void draw_value_editor(GContext *ctx) {
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_text_color(ctx, s_palette.fg);
   graphics_draw_text(ctx, s_ed.title, fonts_get_system_font(TITLE_FONT_KEY),
-                     GRect(4, 4, SCREEN_W - HINT_W - 8, 24), GTextOverflowModeFill,
+                     GRect(4, 4, layout_w() - layout_hint_w() - 8, 24), GTextOverflowModeFill,
                      GTextAlignmentCenter, NULL);
   if (s_ed.kind == ED_SETUP_MODE) {
     draw_mode_options(ctx);
@@ -559,7 +594,8 @@ static void create_and_push(void) {
   layer_add_child(root, s_canvas);
   buttons_init(&s_buttons, s_window, on_action, NULL);
   buttons_set_colors(&s_buttons, s_palette.fg, s_palette.accent);
-  s_ed.check_rect = GRect((SCREEN_W - HINT_W) / 2 - 27, SCREEN_H - 46, 54, 34);
+  s_ed.check_rect = GRect((layout_w() - layout_hint_w()) / 2 - 27, layout_h() - 46,
+                          54, 34);
   apply_button_map();
   window_stack_push(s_window, true);
 }

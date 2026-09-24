@@ -9,6 +9,23 @@ Written in Pebble C. The phone is used for one thing only: a config page
 for layouts, colours and the tap-reveal timeout. Timing, laps, alarms,
 setup and presets all run on the watch, with or without a phone nearby.
 
+## Supported watches
+
+| Platform | Watch | Notes |
+| --- | --- | --- |
+| emery | Pebble Time 2 | 200x228, colour, touch, speaker |
+| basalt | Pebble Time / Time Steel | 144x168, colour. SDK frozen at revision 89: no touch or speaker API |
+| flint | Pebble 2 Duo | 144x168, black and white, speaker |
+| diorite | Pebble 2 | 144x168, black and white |
+
+Every function is on the buttons, so a watch without touch loses only the
+tap-reveal and the circular swipe. On black-and-white watches the palette
+collapses to black on white and ghosting is switched off, since there is
+no dim colour to draw it with.
+
+Round watches (chalk) are not targeted: right-aligned digits and a hint
+column both need corners that a round screen does not have.
+
 The design plan lives in a separate document (the one this project was
 built from). Drop your exported copy next to this file as `PLAN.md` if you
 want it in the repo; the sections below describe what was actually built
@@ -19,7 +36,8 @@ and where it differs.
 1. Zip the project (or import this folder) and create a new project from it.
 2. Confirm the dependency `pebble-clay` (`^1.0.4`) is present — the
    config page uses it. It is already in `package.json`.
-3. Target platform is `emery` only (`package.json` → `pebble.targetPlatforms`).
+3. Target platforms are `emery`, `basalt`, `flint` and `diorite`
+   (`package.json` → `pebble.targetPlatforms`). Drop any you don't want.
 4. Build and install. On first run the app opens the setup screen.
 
 Locally: `pebble build && pebble install --emulator emery` works the same
@@ -117,7 +135,8 @@ make -C test          # unit tests + compile check + config round trip
   lap roll-off past 99, truncation and `_` placeholders, ghosting,
   saturation, redraw timing, alarm ordering, layout centring and rejection.
 - `check` — compiles every watch module against `test/mock/pebble.h`, a mock
-  header written from the PebbleOS applib declarations. It catches type and
+  header written from the PebbleOS applib declarations, once per platform
+  shape (colour/BW, with and without touch and speaker). It catches type and
   signature mistakes without the SDK. The real build never sees it.
 - `cfg` — encodes the default settings with the actual `src/pkjs` code
   (via node) and decodes them with the C decoder, then checks that every

@@ -6,11 +6,25 @@
 
 #include "alarms.h"
 #include "app.h"
+#include "layout.h"
 #include "comm.h"
 #include "win_editor.h"
 #include "win_main.h"
 
+// A throwaway window is the portable way to ask how big the screen is.
+static Window *s_probe;
+
+static void measure_screen(void) {
+  s_probe = window_create();
+  GRect b = layer_get_bounds(window_get_root_layer(s_probe));
+  layout_set_screen(b.size.w, b.size.h);
+  window_destroy(s_probe);
+  s_probe = NULL;
+}
+
 static void init(void) {
+  // Everything lays out from this: 200x228 on emery, 144x168 elsewhere.
+  measure_screen();
   app_load();
   comm_open();
   win_main_create_and_push();

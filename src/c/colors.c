@@ -55,6 +55,18 @@ static GColor ghost_for_bg(uint8_t bg) {
 // ==== PUBLIC ====
 
 void colors_for_mode(uint8_t mode, Palette *out) {
+#ifdef PBL_BW
+  // One bit per pixel: black on white, no ghosts, no delta colours.
+  (void)mode;
+  out->bg = GColorWhite;
+  out->fg = GColorBlack;
+  out->accent = GColorBlack;
+  out->ghost = GColorWhite;
+  out->dim = GColorBlack;
+  out->red = GColorBlack;
+  out->green = GColorBlack;
+  return;
+#else
   const ModeLayout *ml = &g_phone.mode[mode < MODE_COUNT ? mode : 0];
   uint8_t bg = ml->bg, fg = ml->fg;
   if (fg == bg || is_light(fg) == is_light(bg)) fg = is_light(bg) ? 0 : 1;  // contrast
@@ -68,6 +80,7 @@ void colors_for_mode(uint8_t mode, Palette *out) {
   // reddish or greenish background.
   out->red = palette_color(ml->behind, light ? 15 : 13);
   out->green = palette_color(ml->ahead, light ? 16 : 14);
+#endif
 }
 
 GColor colors_for_class(const Palette *p, uint8_t color_class) {

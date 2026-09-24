@@ -122,15 +122,18 @@ static void draw_mode_arrow(GContext *ctx) {
   if (g_counter.mode == MODE_DOWN_UNTIL) id = IC_MODE_UNTIL;
   // In the hint column, above the Down button's icon: the bottom-left
   // corner collides with the lowest line's indicator.
-  icon_draw(ctx, id, GRect(SCREEN_W - HINT_W + 1, 152, 20, 20), s_palette.accent);
+  int16_t size = layout_hint_w() - 2;
+  int16_t y = layout_h() * 5 / 6 - 38;  // just above the Down button icon
+  icon_draw(ctx, id, GRect(layout_w() - layout_hint_w() + 1, y, size, size),
+            s_palette.accent);
 }
 
 static void draw_banner(GContext *ctx, const char *text, int16_t y, GColor color) {
   graphics_context_set_fill_color(ctx, s_palette.bg);
-  graphics_fill_rect(ctx, GRect(0, y, SCREEN_W - HINT_W, 18), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(0, y, layout_w() - layout_hint_w(), 18), 0, GCornerNone);
   graphics_context_set_text_color(ctx, color);
   graphics_draw_text(ctx, text, fonts_get_system_font(STATE_FONT_KEY),
-                     GRect(2, y - 2, SCREEN_W - HINT_W - 4, 18), GTextOverflowModeFill,
+                     GRect(2, y - 2, layout_w() - layout_hint_w() - 4, 18), GTextOverflowModeFill,
                      GTextAlignmentCenter, NULL);
 }
 
@@ -139,7 +142,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   SegColors colors = {
     .dim = s_palette.dim,
     .ghost = s_palette.ghost,
+#ifdef PBL_BW
+    .ghost_level = 0,   // nothing to dim with
+#else
     .ghost_level = STYLE_GHOST_LEVEL(g_phone.style),
+#endif
     .lit = s_palette.fg,
   };
   for (uint8_t i = 0; i < s_layout.n; i++) {
@@ -164,7 +171,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   const char *st = state_text();
   if (st) draw_banner(ctx, st, 2, s_palette.accent);
   if (s_notice_until > app_now_ms()) {
-    draw_banner(ctx, s_notice, SCREEN_H - 20, s_palette.fg);
+    draw_banner(ctx, s_notice, layout_h() - 20, s_palette.fg);
   }
 }
 

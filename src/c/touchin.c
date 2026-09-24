@@ -5,6 +5,8 @@
 #include "app.h"
 #include "layout.h"
 
+#ifdef PBL_TOUCH
+
 #define TAP_MAX_MOVE     12     // px
 #define TAP_MAX_MS       350
 #define GRACE_MS         400    // after attach
@@ -36,11 +38,11 @@ static TouchState s;
 static int16_t abs16(int16_t v) { return v < 0 ? -v : v; }
 
 static int32_t angle_of(GPoint p) {
-  return atan2_lookup((int16_t)(p.y - SCREEN_H / 2), (int16_t)(p.x - SCREEN_W / 2));
+  return atan2_lookup((int16_t)(p.y - layout_h() / 2), (int16_t)(p.x - layout_w() / 2));
 }
 
 static bool far_from_centre(GPoint p) {
-  int32_t dx = p.x - SCREEN_W / 2, dy = p.y - SCREEN_H / 2;
+  int32_t dx = p.x - layout_w() / 2, dy = p.y - layout_h() / 2;
   return dx * dx + dy * dy >= ROTATE_MIN_R * ROTATE_MIN_R;
 }
 
@@ -131,19 +133,30 @@ static void touch_handler(const TouchEvent *e, void *context) {
   }
 }
 
+#endif  // PBL_TOUCH
+
 // ==== PUBLIC ====
 
+// Touch exists on emery only; elsewhere every function is on the buttons.
 void touchin_attach(const TouchClient *client) {
+#ifdef PBL_TOUCH
   s.client = *client;
   s.attach_ms = app_now_ms();
   s.active = false;
   if (!s.attached) touch_service_subscribe(touch_handler, NULL);
   s.attached = true;
+#else
+  (void)client;
+#endif
 }
 
 void touchin_detach(void *ctx) {
+#ifdef PBL_TOUCH
   if (!s.attached || s.client.ctx != ctx) return;
   touch_service_unsubscribe();
   s.attached = false;
   s.active = false;
+#else
+  (void)ctx;
+#endif
 }

@@ -5,6 +5,21 @@
 
 #include "format.h"
 
+static int16_t s_screen_w = 200;
+static int16_t s_screen_h = 228;
+static int16_t s_hint_w = 22;
+
+void layout_set_screen(int16_t w, int16_t h) {
+  s_screen_w = w;
+  s_screen_h = h;
+  s_hint_w = (w >= 180) ? 22 : 20;
+}
+
+int16_t layout_w(void) { return s_screen_w; }
+int16_t layout_h(void) { return s_screen_h; }
+int16_t layout_hint_w(void) { return s_hint_w; }
+int16_t layout_corner(void) { return s_hint_w; }
+
 //                                  L   M   S   XL
 static const int16_t BOX_H[4]     = { 62, 42, 28, 96 };
 static const int16_t GUTTER_W[4]  = { 30, 26, 18, 34 };
@@ -74,7 +89,7 @@ static bool fit_line_size(uint8_t wanted, Format f, uint8_t *out_size, DigitGeom
   uint8_t wide, narrow;
   format_counts_base(f, &wide, &narrow);  // the sign cell is usually blank
   for (;;) {
-    int16_t avail = SCREEN_W - HINT_W - GUTTER_W[sz] - 4;
+    int16_t avail = layout_w() - layout_hint_w() - GUTTER_W[sz] - 4;
     int8_t next = NEXT_SMALLER[sz];
     // Hold the class only if the digits stay taller than the next class's
     // ceiling; otherwise the smaller class is the honest description.
@@ -102,13 +117,45 @@ bool layout_compute(const ModeLayout *ml, const uint8_t *fmts, Layout *out) {
     }
   }
 
+
+  // Pass 2: stack and centre. On a shorter screen the tallest line steps
+  // down a class until the stack fits, rather than the layout being refused.
+  int16_t total;
+  for (;;) {
+    total = 0;
+    for (uint8_t i = 0; i < ml->nlines; i++) {
+      total += BOX_H[out->g[i].size];
+      if (i > 0) total += gap_between(out->g[i - 1].size, out->g[i].size);
+    }
+    if (total <= layout_h()) break;
+    uint8_t tallest = 0;
+    for (uint8_t i = 1; i < ml->nlines; i++) {
+      if (BOX_H[out->g[i].size] > BOX_H[out->g[tallest].size]) tallest = i;
+    }
+    int8_t next = NEXT_SMALLER[out->g[tallest].size];
+    if (next < 0) {
+      out->error = LAYOUT_TOO_TALL;
+      return false;
+    }
+    out->g[tallest].size = (uint8_t)next;
+    uint8_t wide, narrow;
+    format_counts_base((Format)fmts[tallest], &wide, &narrow);
+    int16_t avail = layout_w() - layout_hint_w() - GUTTER_W[out->g[tallest].size] - 4;
+    if (!layout_fit_digits(wide, narrow, avail, DIGIT_MAX[out->g[tallest].size],
+                           DIGIT_MIN[out->g[tallest].size], &out->g[tallest].dg)) {
+      out->error = LAYOUT_TOO_WIDE;
+      out->error_line = tallest;
+      return false;
+    }
+  }
+
   // Pass 1b: the same height with the overflow/sign cell added, by making
   // the cells narrower rather than by dropping a size.
   for (uint8_t i = 0; i < ml->nlines; i++) {
     LineGeom *g = &out->g[i];
     uint8_t wide, narrow;
     format_counts((Format)fmts[i], &wide, &narrow);
-    int16_t avail = SCREEN_W - HINT_W - GUTTER_W[g->size] - 4;
+    int16_t avail = layout_w() - layout_hint_w() - GUTTER_W[g->size] - 4;
     g->dg_sign = g->dg;
     int16_t fixed = narrow * g->dg.narrow_w + (wide + narrow - 1) * g->dg.spacing;
     int16_t w = wide ? (avail - fixed) / wide : g->dg.w;
@@ -118,18 +165,7 @@ bool layout_compute(const ModeLayout *ml, const uint8_t *fmts, Layout *out) {
     g->dg_sign.w = w;
   }
 
-  // Pass 2: stack and centre the resulting boxes.
-  int16_t total = 0;
-  for (uint8_t i = 0; i < ml->nlines; i++) {
-    total += BOX_H[out->g[i].size];
-    if (i > 0) total += gap_between(out->g[i - 1].size, out->g[i].size);
-  }
-  if (total > SCREEN_H) {
-    out->error = LAYOUT_TOO_TALL;
-    return false;
-  }
-
-  int16_t y = (SCREEN_H - total) / 2;
+  int16_t y = (layout_h() - total) / 2;
   for (uint8_t i = 0; i < ml->nlines; i++) {
     LineGeom *g = &out->g[i];
     if (i > 0) y += gap_between(out->g[i - 1].size, g->size);
@@ -141,9 +177,9 @@ bool layout_compute(const ModeLayout *ml, const uint8_t *fmts, Layout *out) {
     format_counts_base((Format)fmts[i], &wide, &narrow);
     format_counts((Format)fmts[i], &wide_all, &narrow);
     g->text_w = layout_text_width(wide, narrow, &g->dg);
-    g->text_x = SCREEN_W - HINT_W - 2 - g->text_w;
+    g->text_x = layout_w() - layout_hint_w() - 2 - g->text_w;
     g->text_w_sign = layout_text_width(wide_all, narrow, &g->dg_sign);
-    g->text_x_sign = SCREEN_W - HINT_W - 2 - g->text_w_sign;
+    g->text_x_sign = layout_w() - layout_hint_w() - 2 - g->text_w_sign;
     g->text_y = g->y + (g->h - g->dg.h) / 2;
     y += g->h;
   }

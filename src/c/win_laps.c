@@ -25,7 +25,7 @@ static uint8_t  s_top;  // first visible row (0 = newest)
 // ==== HELPERS ====
 
 static uint8_t rows_visible(void) {
-  return (uint8_t)((SCREEN_H - HEADER_H) / ROW_H);
+  return (uint8_t)((layout_h() - HEADER_H) / ROW_H);
 }
 
 static void fmt_ms(char *buf, size_t n, int64_t ms, bool sign) {
@@ -76,7 +76,7 @@ static void draw_row(GContext *ctx, uint8_t row, int16_t y) {
   graphics_draw_text(ctx, total_s, font, GRect(132, y, 40, ROW_H), GTextOverflowModeFill,
                      GTextAlignmentRight, NULL);
   if (lap == g_counter.lap_best_ms) {
-    icon_draw(ctx, IC_BEST, GRect(SCREEN_W - HINT_W - 12, y + 5, 11, 11),
+    icon_draw(ctx, IC_BEST, GRect(layout_w() - layout_hint_w() - 12, y + 5, 11, 11),
               s_palette.accent);
   }
 }
@@ -92,13 +92,13 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   }
   graphics_context_set_text_color(ctx, s_palette.accent);
   graphics_draw_text(ctx, head, fonts_get_system_font(HEAD_FONT),
-                     GRect(2, 0, SCREEN_W - HINT_W - 4, HEADER_H), GTextOverflowModeFill,
+                     GRect(2, 0, layout_w() - layout_hint_w() - 4, HEADER_H), GTextOverflowModeFill,
                      GTextAlignmentLeft, NULL);
 
   if (g_counter.lap_stored == 0) {
     graphics_context_set_text_color(ctx, s_palette.dim);
     graphics_draw_text(ctx, "No laps yet", fonts_get_system_font(ROW_FONT),
-                       GRect(2, HEADER_H + 8, SCREEN_W - HINT_W - 4, ROW_H),
+                       GRect(2, HEADER_H + 8, layout_w() - layout_hint_w() - 4, ROW_H),
                        GTextOverflowModeFill, GTextAlignmentCenter, NULL);
     return;
   }

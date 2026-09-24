@@ -11,10 +11,13 @@
 
 #include "settings.h"
 
-#define SCREEN_W 200
-#define SCREEN_H 228
-#define HINT_W   22   // right hint column
-#define CORNER   22   // top-left Back hint, bottom-left mode arrow
+// Screen size is set once at startup from the window bounds, so the same
+// code serves 200x228 (emery) and 144x168 (basalt, flint, diorite).
+void    layout_set_screen(int16_t w, int16_t h);
+int16_t layout_w(void);
+int16_t layout_h(void);
+int16_t layout_hint_w(void);   // right hint column
+int16_t layout_corner(void);   // top-left Back hint
 
 typedef struct {
   int16_t h;         // digit height

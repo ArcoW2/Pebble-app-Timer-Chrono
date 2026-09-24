@@ -137,6 +137,7 @@ typedef void (*AppTimerCallback)(void *data);
 AppTimer *app_timer_register(uint32_t timeout_ms, AppTimerCallback callback, void *data);
 void      app_timer_cancel(AppTimer *timer);
 
+#ifdef PBL_TOUCH
 typedef enum { TouchEvent_Touchdown, TouchEvent_Liftoff, TouchEvent_PositionUpdate } TouchEventType;
 typedef struct TouchEvent {
   TouchEventType type : 8;
@@ -147,15 +148,18 @@ typedef void (*TouchServiceHandler)(const TouchEvent *event, void *context);
 void touch_service_subscribe(TouchServiceHandler handler, void *context);
 void touch_service_unsubscribe(void);
 bool touch_service_is_enabled(void);
+#endif  // PBL_TOUCH
 
 typedef struct { const uint32_t *durations; uint32_t num_segments; } VibePattern;
 void vibes_enqueue_custom_pattern(VibePattern pattern);
 
+#ifdef PBL_SPEAKER
 typedef enum { SpeakerWaveformSine = 0 } SpeakerWaveform;
 typedef struct { uint8_t midi_note, waveform; uint16_t duration_ms;
                  uint8_t velocity, reserved; } SpeakerNote;
 bool speaker_play_notes(const SpeakerNote *notes, uint32_t num_notes, uint8_t volume);
 bool speaker_is_muted(void);
+#endif  // PBL_SPEAKER
 
 bool    persist_exists(const uint32_t key);
 int32_t persist_read_int(const uint32_t key);

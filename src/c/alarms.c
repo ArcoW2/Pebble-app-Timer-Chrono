@@ -10,6 +10,11 @@
 #include "app.h"
 #include "win_main.h"
 
+#ifndef PBL_SPEAKER
+typedef struct { uint8_t midi_note, waveform; uint16_t duration_ms;
+                 uint8_t velocity, reserved; } SpeakerNote;  // layout only
+#endif
+
 #define K_PENDING       7
 #define WAKE_EARLY_S    3
 #define MISSED_GRACE_MS 5000
@@ -35,9 +40,15 @@ static void vibrate(const uint32_t *segments, uint32_t count) {
   vibes_enqueue_custom_pattern(pattern);
 }
 
+// Only emery and flint have a speaker, and basalt's SDK predates the API.
 static void play(const SpeakerNote *notes, uint32_t count) {
+#ifdef PBL_SPEAKER
   if (speaker_is_muted()) return;
   speaker_play_notes(notes, count, 70);
+#else
+  (void)notes;
+  (void)count;
+#endif
 }
 
 static void output_for(uint8_t out, uint8_t type) {

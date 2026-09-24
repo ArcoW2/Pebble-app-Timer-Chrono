@@ -16,13 +16,22 @@ cfg: test_cfg_roundtrip.c $(PURE)
 	$(CC) $(CFLAGS) -o cfg_runner test_cfg_roundtrip.c $(PURE)
 	./cfg_runner $$(node encode_defaults.js)
 
-# Type-checks the Pebble-only modules without the SDK.
+# Type-checks the Pebble-only modules without the SDK, once per supported
+# platform shape: emery (colour, touch, speaker), basalt (colour only,
+# frozen SDK), flint/diorite (black and white).
+PLATFORMS = "-DPBL_COLOR -DPBL_RECT -DPBL_TOUCH -DPBL_SPEAKER" \
+            "-DPBL_COLOR -DPBL_RECT" \
+            "-DPBL_BW -DPBL_RECT -DPBL_SPEAKER" \
+            "-DPBL_BW -DPBL_RECT"
+
 check:
-	@for f in $(WATCH); do \
-	  $(CC) -std=c11 -Wall -Wextra -Werror -Wno-unused-parameter -fsyntax-only \
-	    -Imock -I../src/c $$f || exit 1; \
+	@for p in $(PLATFORMS); do \
+	  for f in $(WATCH); do \
+	    $(CC) -std=c11 -Wall -Wextra -Werror -Wno-unused-parameter -fsyntax-only \
+	      -Imock -I../src/c $$(eval echo $$p) $$f || exit 1; \
+	  done; \
 	done
-	@echo "watch modules: syntax ok"
+	@echo "watch modules: syntax ok on all platforms"
 
 clean:
 	rm -f test_runner cfg_runner

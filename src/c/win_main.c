@@ -91,8 +91,10 @@ static void apply_button_map(void) {
       m.b[BTN_SELECT] = (ButtonDef){ IC_PLAY, IC_STOP, ACT_RESUME, ACT_STOP, false };
       break;
     default:  // ST_STOPPED
-      m.b[BTN_UP] = (ButtonDef){ IC_NONE, IC_SETTINGS, 0, ACT_SETTINGS, false };
-      m.b[BTN_SELECT] = (ButtonDef){ IC_RESTART, IC_RESET, ACT_RESTART, ACT_RESET, false };
+      // Reset sits on long Up, where the lap button was: that is where the
+      // older watches put it. Settings stay reachable from idle.
+      m.b[BTN_UP] = (ButtonDef){ IC_NONE, IC_RESET, 0, ACT_RESET, false };
+      m.b[BTN_SELECT] = (ButtonDef){ IC_RESTART, IC_NONE, ACT_RESTART, 0, false };
       break;
   }
   buttons_set_map(&s_buttons, &m);

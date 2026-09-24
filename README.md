@@ -15,7 +15,6 @@ setup and presets all run on the watch, with or without a phone nearby.
 | --- | --- | --- |
 | emery | Pebble Time 2 | 200x228, colour, touch, speaker |
 | basalt | Pebble Time / Time Steel | 144x168, colour. SDK frozen at revision 89: no touch or speaker API |
-| flint | Pebble 2 Duo | 144x168, black and white, speaker |
 | diorite | Pebble 2 | 144x168, black and white |
 
 Every function is on the buttons, so a watch without touch loses only the
@@ -25,6 +24,11 @@ no dim colour to draw it with.
 
 Round watches (chalk) are not targeted: right-aligned digits and a hint
 column both need corners that a round screen does not have.
+
+Flint (Pebble 2 Duo) is left out for a different reason: the `pebble-clay`
+package does not list flint as supported, so the build refuses it. The
+watch code itself is platform-clean and compiles for flint; dropping Clay
+in favour of a hand-written config page would bring it back.
 
 The design plan lives in a separate document (the one this project was
 built from). Drop your exported copy next to this file as `PLAN.md` if you
@@ -36,7 +40,7 @@ and where it differs.
 1. Zip the project (or import this folder) and create a new project from it.
 2. Confirm the dependency `pebble-clay` (`^1.0.4`) is present — the
    config page uses it. It is already in `package.json`.
-3. Target platforms are `emery`, `basalt`, `flint` and `diorite`
+3. Target platforms are `emery`, `basalt` and `diorite`
    (`package.json` → `pebble.targetPlatforms`). Drop any you don't want.
 4. Build and install. On first run the app opens the setup screen.
 

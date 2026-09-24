@@ -104,7 +104,9 @@ static void draw_gutter(GContext *ctx, const LineGeom *g, const LineCfg *lc) {
   static const int16_t ICON_SZ[4] = { 16, 14, 12, 20 };  // L, M, S, XL
   int16_t isz = ICON_SZ[g->size < 4 ? g->size : 1];
   bool with_label = (g->size != SIZE_S);
-  int16_t iy = with_label ? g->y + 4 : g->y + (g->h - isz) / 2;
+  // Icon plus label are centred in the line box as one block.
+  int16_t block_h = isz + (with_label ? 12 : 0);
+  int16_t iy = g->y + (g->h - block_h) / 2;
   icon_draw(ctx, icon_for_source(lc->source), GRect(2, iy, isz, isz), s_palette.accent);
   if (!with_label) return;
   graphics_context_set_text_color(ctx, s_palette.fg);
@@ -118,7 +120,9 @@ static void draw_mode_arrow(GContext *ctx) {
   uint8_t id = IC_MODE_UP;
   if (g_counter.mode == MODE_DOWN_FOR) id = IC_MODE_DOWN;
   if (g_counter.mode == MODE_DOWN_UNTIL) id = IC_MODE_UNTIL;
-  icon_draw(ctx, id, GRect(2, SCREEN_H - CORNER - 2, CORNER, CORNER), s_palette.accent);
+  // In the hint column, above the Down button's icon: the bottom-left
+  // corner collides with the lowest line's indicator.
+  icon_draw(ctx, id, GRect(SCREEN_W - HINT_W + 1, 152, 20, 20), s_palette.accent);
 }
 
 static void draw_banner(GContext *ctx, const char *text, int16_t y, GColor color) {

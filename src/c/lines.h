@@ -18,7 +18,10 @@ typedef struct {
 } LineValue;
 
 bool    lines_source_is_running(uint8_t source);
-uint8_t lines_resolve_format(uint8_t source, uint8_t format, const Counter *c);
+// AUTO drops the fields that are not in use, so the digits stay as large as
+// the line allows. Re-resolved as the value crosses a day/hour boundary.
+uint8_t lines_resolve_format(uint8_t source, uint8_t format, const Counter *c,
+                             int64_t now);
 // Widest format a line can resolve to in a mode (layout validation).
 uint8_t lines_worst_format(uint8_t source, uint8_t format, Mode mode);
 int64_t lines_finest_res(uint8_t format);

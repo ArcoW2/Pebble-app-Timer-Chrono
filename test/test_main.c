@@ -199,12 +199,57 @@ static void test_lines_and_layout(void) {
   CHECK(q.mode[0].nlines == 1 && q.mode[1].nlines > 0);
 }
 
+// The size combinations that must fit on 228 px.
+static void test_xl_combinations(void) {
+  static const uint8_t COMBOS[][4] = {
+    { SIZE_XL, SIZE_M,  SIZE_M,  255 },
+    { SIZE_XL, SIZE_L,  SIZE_M,  255 },
+    { SIZE_XL, SIZE_S,  SIZE_S,  SIZE_S },
+    { SIZE_XL, SIZE_M,  SIZE_S,  SIZE_S },
+    { SIZE_XL, SIZE_XL, 255,     255 },
+  };
+  for (unsigned c = 0; c < sizeof(COMBOS) / sizeof(COMBOS[0]); c++) {
+    ModeLayout ml;
+    memset(&ml, 0, sizeof(ml));
+    uint8_t fmts[MAX_LINES];
+    for (int i = 0; i < MAX_LINES && COMBOS[c][i] != 255; i++) {
+      ml.lines[i] = (LineCfg){ SRC_TOTAL, COMBOS[c][i], FMT_MS, 0 };
+      fmts[i] = FMT_MS;
+      ml.nlines++;
+    }
+    Layout l;
+    CHECK(layout_compute(&ml, fmts, &l));
+  }
+}
+
+static void test_auto_format(void) {
+  Counter c;
+  memset(&c, 0, sizeof(c));
+  counter_setup_for(&c, 2 * 86400000LL);
+  counter_start(&c, 0, 0);
+  CHECK(lines_resolve_format(SRC_REMAINING, FMT_AUTO, &c, 0) == FMT_DHMS);
+  // One day gone: the day field goes with it.
+  CHECK(lines_resolve_format(SRC_REMAINING, FMT_AUTO, &c, 86400000LL + 1) == FMT_HMS);
+  int64_t almost = 2 * 86400000LL - 30 * 60000LL;
+  CHECK(lines_resolve_format(SRC_REMAINING, FMT_AUTO, &c, almost) == FMT_MS);
+
+  counter_setup_up(&c, 0);
+  counter_start(&c, 0, 0);
+  CHECK(lines_resolve_format(SRC_TOTAL, FMT_AUTO, &c, 5000) == FMT_MS);
+  CHECK(lines_resolve_format(SRC_TOTAL, FMT_AUTO, &c, 3600000LL) == FMT_HMS);
+  CHECK(lines_resolve_format(SRC_TOTAL, FMT_AUTO, &c, 86400000LL) == FMT_DHMS);
+  // An explicit choice is never overridden.
+  CHECK(lines_resolve_format(SRC_TOTAL, FMT_DHMS, &c, 5000) == FMT_DHMS);
+}
+
 int main(void) {
   test_format();
   test_next_change();
   test_model();
   test_alarms();
   test_lines_and_layout();
+  test_xl_combinations();
+  test_auto_format();
   printf("%d passed, %d failed\n", s_pass, s_fail);
   return s_fail ? 1 : 0;
 }

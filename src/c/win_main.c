@@ -38,6 +38,8 @@ static char      s_notice[64];
 static int64_t   s_notice_until;
 
 static void refresh_values(void);
+static void recompute_layout(void);
+static bool formats_changed(int64_t now);
 
 // ==== HELPERS ====
 
@@ -170,6 +172,10 @@ static void schedule_refresh(int64_t dt) {
 
 static void refresh_values(void) {
   int64_t now = app_now_ms();
+  if (formats_changed(now)) {   // a field appeared or disappeared
+    recompute_layout();
+    return;
+  }
   bool reveal = now < s_reveal_until;
   bool live = counter_is_live(&g_counter);
   const ModeLayout *ml = mode_layout();
@@ -197,14 +203,28 @@ static void refresh_values(void) {
   schedule_refresh(next);
 }
 
+// True when AUTO has moved to a different format, e.g. the days ran out.
+static bool formats_changed(int64_t now) {
+  const ModeLayout *ml = mode_layout();
+  for (uint8_t i = 0; i < s_layout.n; i++) {
+    if (lines_resolve_format(ml->lines[i].source, ml->lines[i].format, &g_counter,
+                             now) != s_fmt[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static void recompute_layout(void) {
   colors_for_mode(g_counter.mode, &s_palette);
   window_set_background_color(s_window, s_palette.bg);
   buttons_set_colors(&s_buttons, s_palette.fg, s_palette.accent);
 
+  int64_t now = app_now_ms();
   const ModeLayout *ml = mode_layout();
   for (uint8_t i = 0; i < ml->nlines; i++) {
-    s_fmt[i] = lines_resolve_format(ml->lines[i].source, ml->lines[i].format, &g_counter);
+    s_fmt[i] = lines_resolve_format(ml->lines[i].source, ml->lines[i].format, &g_counter,
+                                    now);
   }
   if (!layout_compute(ml, s_fmt, &s_layout)) {
     // Should not happen (the phone config is validated), but never leave
@@ -213,7 +233,7 @@ static void recompute_layout(void) {
     settings_mode_layout_default((Mode)g_counter.mode, &def);
     for (uint8_t i = 0; i < def.nlines; i++) {
       s_fmt[i] = lines_resolve_format(def.lines[i].source, def.lines[i].format,
-                                      &g_counter);
+                                      &g_counter, now);
     }
     if (!layout_compute(&def, s_fmt, &s_layout)) s_layout.n = 0;
     g_phone.mode[g_counter.mode] = def;

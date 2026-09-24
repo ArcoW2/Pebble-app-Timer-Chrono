@@ -28,7 +28,7 @@ typedef enum {
   SRC_COUNT
 } Source;
 
-typedef enum { SIZE_L = 0, SIZE_M, SIZE_S, SIZE_COUNT } LineSize;
+typedef enum { SIZE_L = 0, SIZE_M, SIZE_S, SIZE_XL, SIZE_COUNT } LineSize;
 
 // Formats. AUTO resolves per source (see lines.c). The last three are
 // fixed formats that belong to one source type.

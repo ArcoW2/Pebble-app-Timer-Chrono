@@ -26,6 +26,7 @@ var SOURCES = [
 ];
 
 var SIZES = [
+  { value: '3', label: 'XL' },
   { value: '0', label: 'L' },
   { value: '1', label: 'M' },
   { value: '2', label: 'S' }

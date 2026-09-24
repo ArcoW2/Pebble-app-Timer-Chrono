@@ -5,12 +5,12 @@
 
 #include "format.h"
 
-//                                  L   M   S
-static const int16_t BOX_H[3]     = { 62, 42, 28 };
-static const int16_t GUTTER_W[3]  = { 30, 26, 18 };
-static const int16_t DIGIT_MAX[3] = { 54, 36, 22 };
-static const int16_t DIGIT_MIN[3] = { 26, 18, 14 };
-static const int16_t GAP[3]       = { 8, 6, 4 };
+//                                  L   M   S   XL
+static const int16_t BOX_H[4]     = { 62, 42, 28, 96 };
+static const int16_t GUTTER_W[4]  = { 30, 26, 18, 34 };
+static const int16_t DIGIT_MAX[4] = { 54, 36, 22, 88 };
+static const int16_t DIGIT_MIN[4] = { 26, 18, 14, 30 };
+static const int16_t GAP[4]       = { 8, 6, 4, 10 };
 
 // ==== HELPERS ====
 
@@ -34,9 +34,9 @@ bool layout_fit_digits(uint8_t wide, uint8_t narrow, int16_t avail_w, int16_t ma
   if (wide == 0) return false;
   for (int16_t h = max_h; h >= min_h; h--) {
     // Small digits need proportionally thicker segments to stay readable.
-    int16_t t = max16(2, h < 26 ? h / 6 : (h < 40 ? h / 7 : h / 8));
+    int16_t t = max16(3, h < 26 ? h / 5 : (h < 44 ? h / 6 : h / 7));
     int16_t sp = max16(1, t / 3);
-    int16_t wmin = h * 40 / 100;
+    int16_t wmin = h * 36 / 100;   // narrower cells before giving up height
     int16_t wmax = h * 60 / 100;
     int16_t nw = max16(t + 2, h * 12 / 100);
     int16_t fixed = narrow * nw + (wide + narrow - 1) * sp;

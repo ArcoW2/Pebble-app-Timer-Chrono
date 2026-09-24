@@ -28,11 +28,26 @@ static bool format_allowed(uint8_t source, uint8_t f) {
   return false;  // delta, until, lap count have one fixed format
 }
 
-static uint8_t down_time_format(const Counter *c) {
-  if (c->mode == MODE_DOWN_UNTIL) return c->until_day_offset > 0 ? FMT_DHMS : FMT_HMS;
-  if (c->target_ms >= 86400000LL) return FMT_DHMS;
-  if (c->target_ms >= 3600000LL) return FMT_HMS;
+// Ladder from a magnitude in ms: no days -> no day field, no hours -> none.
+static uint8_t format_for_span(int64_t ms) {
+  if (ms >= 86400000LL) return FMT_DHMS;
+  if (ms >= 3600000LL) return FMT_HMS;
   return FMT_MS;
+}
+
+static uint8_t auto_time_format(const Counter *c, int64_t now) {
+  if (c->mode == MODE_UP) {
+    int64_t active = counter_active_ms(c, now);
+    return format_for_span(active);
+  }
+  // Count down: what is still to come, not what was set. Once the days are
+  // gone they do not come back, so this settles after one change.
+  int64_t rem = (c->state == ST_IDLE) ? c->target_ms : counter_remaining_ms(c, now);
+  if (rem < 0) rem = -rem;
+  if (c->mode == MODE_DOWN_UNTIL && c->state == ST_IDLE) {
+    return c->until_day_offset > 0 ? FMT_DHMS : FMT_HMS;
+  }
+  return format_for_span(rem);
 }
 
 static uint8_t fixed_format(uint8_t source) {
@@ -63,11 +78,10 @@ bool lines_source_is_running(uint8_t s) {
   return is_time_source(s) || s == SRC_CUR_LAP || is_delta_source(s);
 }
 
-uint8_t lines_resolve_format(uint8_t source, uint8_t format, const Counter *c) {
+uint8_t lines_resolve_format(uint8_t source, uint8_t format, const Counter *c,
+                             int64_t now) {
   if (format != FMT_AUTO && format_allowed(source, format)) return format;
-  if (is_time_source(source)) {
-    return (c->mode == MODE_UP) ? FMT_DHMS : down_time_format(c);
-  }
+  if (is_time_source(source)) return auto_time_format(c, now);
   return fixed_format(source);
 }
 

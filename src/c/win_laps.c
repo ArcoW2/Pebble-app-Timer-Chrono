@@ -50,7 +50,7 @@ static void draw_row(GContext *ctx, uint8_t row, int16_t y) {
   for (uint8_t i = (uint8_t)(k + 1); i < g_counter.lap_stored; i++) {
     total -= g_counter.lap_ms[i];
   }
-  char lap_s[12], delta_s[12], total_s[12], nr_s[8];
+  char lap_s[20], delta_s[20], total_s[20], nr_s[8];
   fmt_ms(lap_s, sizeof(lap_s), lap, false);
   fmt_ms(total_s, sizeof(total_s), total, false);
   snprintf(nr_s, sizeof(nr_s), "%u", number);

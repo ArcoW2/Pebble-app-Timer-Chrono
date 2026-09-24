@@ -123,8 +123,6 @@ static void build_until_fields(void) {
 
 // The editor renders its fields with the same segment renderer as the main
 // screen, so what you set looks like what you will read.
-static int8_t s_cell_field[MAX_CELLS];  // which field a cell belongs to, -1 = none
-
 // Builds the cells for fields [from, to), keeping a map from cell to field.
 static void build_text(LineText *out, uint8_t from, uint8_t to, int8_t *map) {
   memset(out, 0, sizeof(*out));

@@ -30,6 +30,7 @@ static const uint8_t PALETTE_ARGB8[] = {
 
 // ==== HELPERS ====
 
+#ifndef PBL_BW
 static GColor palette_color(uint8_t index, uint8_t fallback) {
   uint8_t i = index < PALETTE_COUNT ? index : fallback;
   return (GColor){ .argb = PALETTE_ARGB8[i] };
@@ -51,6 +52,8 @@ static GColor ghost_for_bg(uint8_t bg) {
     default: return GColorDarkGray;       // black
   }
 }
+
+#endif  // !PBL_BW
 
 // ==== PUBLIC ====
 

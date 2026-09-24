@@ -10,11 +10,6 @@
 #include "app.h"
 #include "win_main.h"
 
-#ifndef PBL_SPEAKER
-typedef struct { uint8_t midi_note, waveform; uint16_t duration_ms;
-                 uint8_t velocity, reserved; } SpeakerNote;  // layout only
-#endif
-
 #define K_PENDING       7
 #define WAKE_EARLY_S    3
 #define MISSED_GRACE_MS 5000

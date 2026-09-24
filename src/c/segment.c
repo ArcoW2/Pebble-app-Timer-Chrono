@@ -103,16 +103,10 @@ static void draw_segments(GContext *ctx, uint16_t mask, GRect cell, int16_t t,
   }
 }
 
-// Thickness of a ghost segment at this level.
+// Ghost segments have the same weight as lit ones; the level decides their
+// colour, not their thickness.
 static int16_t ghost_thickness(int16_t t, uint8_t level) {
-  int16_t g;
-  switch (level) {
-    case 1:  g = t / 3; break;
-    case 2:  g = t * 2 / 3; break;
-    case 3:  g = t; break;
-    default: return 0;
-  }
-  return g < 1 ? 1 : g;
+  return level ? t : 0;
 }
 
 static void draw_separator(GContext *ctx, char ch, GRect cell, int16_t t) {

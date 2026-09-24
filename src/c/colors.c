@@ -41,16 +41,19 @@ static bool is_light(uint8_t index) {
          index == 13 || index == 14 || index == 17;
 }
 
-// Ghost segments: a step away from the background, subtle but visible.
-static GColor ghost_for_bg(uint8_t bg) {
-  switch (bg) {
-    case 1:  return GColorLightGray;      // white
-    case 2:  return GColorDukeBlue;       // oxford blue
-    case 3:  return GColorBlack;          // dark gray
-    case 4:  return GColorMidnightGreen;  // dark green
-    case 5:  return GColorBlack;          // imperial purple
-    default: return GColorDarkGray;       // black
+// Ghost colour: with w = STYLE_GHOST_MAX - level, each channel becomes
+// (w * background + foreground) / (w + 1). A higher level means less
+// background weight, so the ghost moves towards the digit colour.
+static GColor blend_toward_bg(GColor bg, GColor fg, uint8_t level) {
+  uint8_t w = (level >= STYLE_GHOST_MAX) ? 0 : (uint8_t)(STYLE_GHOST_MAX - level);
+  uint8_t out = 0;
+  for (int shift = 0; shift <= 4; shift += 2) {      // blue, green, red
+    uint8_t b = (bg.argb >> shift) & 0x03;
+    uint8_t f = (fg.argb >> shift) & 0x03;
+    uint8_t v = (uint8_t)((b * w + f + w / 2) / (w + 1));
+    out |= (uint8_t)((v & 0x03) << shift);
   }
+  return (GColor){ .argb = (uint8_t)(0xC0 | out) };  // keep it opaque
 }
 
 #endif  // !PBL_BW
@@ -72,12 +75,13 @@ void colors_for_mode(uint8_t mode, Palette *out) {
 #else
   const ModeLayout *ml = &g_phone.mode[mode < MODE_COUNT ? mode : 0];
   uint8_t bg = ml->bg, fg = ml->fg;
-  if (fg == bg || is_light(fg) == is_light(bg)) fg = is_light(bg) ? 0 : 1;  // contrast
+  // No correction: whatever the user picked is what gets drawn.
   bool light = is_light(bg);
   out->bg = palette_color(bg, 0);
   out->fg = palette_color(fg, 1);
   out->accent = palette_color(ml->accent, 10);
-  out->ghost = ghost_for_bg(bg);
+  uint8_t level = STYLE_GHOST_LEVEL(g_phone.style);
+  out->ghost = level ? blend_toward_bg(out->bg, out->fg, level) : out->bg;
   out->dim = light ? GColorDarkGray : GColorLightGray;
   // Behind / ahead are chosen per mode, so they can stay readable on a
   // reddish or greenish background.

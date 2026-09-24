@@ -52,17 +52,23 @@ var COLORS = [
   { value: '9', label: 'Chrome yellow' },
   { value: '10', label: 'Orange' },
   { value: '11', label: 'Vivid cerulean' },
-  { value: '12', label: 'Shocking pink' }
+  { value: '12', label: 'Shocking pink' },
+  { value: '13', label: 'Red' },
+  { value: '14', label: 'Green' },
+  { value: '15', label: 'Dark red' },
+  { value: '16', label: 'Islamic green' },
+  { value: '17', label: 'Folly' },
+  { value: '18', label: 'Bulgarian rose' }
 ];
 
 // Defaults mirror settings.c, so the page shows what the watch does.
 var DEFAULTS = {
-  U: { fg: '1', bg: '0', ac: '10',
+  U: { fg: '1', bg: '0', ac: '10', behind: '13', ahead: '14',
        lines: [['1', '0', '0', true], ['3', '1', '3', true], ['9', '2', '0', false]] },
-  F: { fg: '1', bg: '2', ac: '7',
-       lines: [['2', '0', '0', true], ['1', '2', '0', true]] },
-  T: { fg: '9', bg: '0', ac: '11',
-       lines: [['2', '0', '0', true], ['11', '1', '0', false]] }
+  F: { fg: '1', bg: '2', ac: '7', behind: '13', ahead: '14',
+       lines: [['2', '0', '0', true], ['3', '2', '3', true], ['1', '2', '0', true]] },
+  T: { fg: '9', bg: '0', ac: '11', behind: '13', ahead: '14',
+       lines: [['2', '0', '0', true], ['3', '2', '3', true], ['11', '2', '0', false]] }
 };
 
 function select(messageKey, label, options, defaultValue) {
@@ -99,7 +105,9 @@ function modeSection(mode) {
     { type: 'heading', defaultValue: mode.title },
     select(mode.key + '_BG', 'Background', COLORS, def.bg),
     select(mode.key + '_FG', 'Digits', COLORS, def.fg),
-    select(mode.key + '_AC', 'Accent', COLORS, def.ac)
+    select(mode.key + '_AC', 'Accent', COLORS, def.ac),
+    select(mode.key + '_BEHIND', 'Behind / overrun', COLORS, def.behind),
+    select(mode.key + '_AHEAD', 'Ahead', COLORS, def.ahead)
   ];
   for (var i = 0; i < mode.lines; i++) {
     items = items.concat(lineItems(mode, i));

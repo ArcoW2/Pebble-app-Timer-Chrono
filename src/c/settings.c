@@ -57,7 +57,7 @@ void settings_phone_defaults(PhoneSettings *p) {
   memset(p, 0, sizeof(*p));
   p->version = PHONE_SETTINGS_VERSION;
   p->reveal_s = 5;
-  p->style = STYLE_GHOSTING;
+  p->style = 1;  // faint by default: full ghosting fights the lit digits
   for (int m = 0; m < MODE_COUNT; m++) {
     settings_mode_layout_default((Mode)m, &p->mode[m]);
   }
@@ -115,7 +115,7 @@ bool settings_phone_decode(const uint8_t *data, uint16_t len, PhoneSettings *out
   if (data[0] != PHONE_SETTINGS_VERSION) return false;
   out->version = PHONE_SETTINGS_VERSION;
   out->reveal_s = data[1] < 1 ? 1 : (data[1] > 30 ? 30 : data[1]);
-  out->style = data[2] & STYLE_GHOSTING;
+  out->style = data[2] & STYLE_GHOST_MASK;
   for (int m = 0; m < MODE_COUNT; m++) {
     decode_mode(&data[PHONE_CFG_HEADER + m * PHONE_CFG_MODE], &out->mode[m], (Mode)m);
   }

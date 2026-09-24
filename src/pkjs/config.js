@@ -137,11 +137,15 @@ module.exports = function buildConfig(status) {
       step: 1
     },
     {
-      type: 'toggle',
+      type: 'slider',
       messageKey: 'GHOST',
-      label: 'Ghost unlit segments',
-      description: 'LCD look: leading zeros show as dim 8s.',
-      defaultValue: true
+      label: 'Ghost level',
+      description: '0 = off. Higher draws unlit segments thicker, for more ' +
+                   'of an LCD look. Too high and the lit digits lose contrast.',
+      defaultValue: 1,
+      min: 0,
+      max: 3,
+      step: 1
     }
   ];
 

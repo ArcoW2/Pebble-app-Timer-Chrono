@@ -54,7 +54,8 @@ static void fill_vseg(GContext *ctx, int16_t x, int16_t y0, int16_t y1, int16_t 
   draw_fill_poly(ctx, p, 6);
 }
 
-static void draw_segments(GContext *ctx, uint16_t mask, GRect cell, int16_t t) {
+static void draw_segments(GContext *ctx, uint16_t mask, GRect cell, int16_t t,
+                          int16_t seg_t) {
   int16_t l = cell.origin.x + t / 2;
   int16_t r = cell.origin.x + cell.size.w - 1 - t / 2;
   int16_t top = cell.origin.y + t / 2;
@@ -63,17 +64,19 @@ static void draw_segments(GContext *ctx, uint16_t mask, GRect cell, int16_t t) {
   int16_t g = t / 4 > 0 ? t / 4 : 1;
   int16_t cx = cell.origin.x + cell.size.w / 2;
 
-  if (mask & SEG_A) fill_hseg(ctx, l + g, r - g, top, t);
-  if (mask & SEG_G) fill_hseg(ctx, l + g, r - g, mid, t);
-  if (mask & SEG_D) fill_hseg(ctx, l + g, r - g, bot, t);
-  if (mask & SEG_F) fill_vseg(ctx, l, top + g, mid - g, t);
-  if (mask & SEG_B) fill_vseg(ctx, r, top + g, mid - g, t);
-  if (mask & SEG_E) fill_vseg(ctx, l, mid + g, bot - g, t);
-  if (mask & SEG_C) fill_vseg(ctx, r, mid + g, bot - g, t);
+  // Segment centres stay put; only the drawn thickness varies, so a ghost
+  // sits exactly where its lit counterpart would.
+  if (mask & SEG_A) fill_hseg(ctx, l + g, r - g, top, seg_t);
+  if (mask & SEG_G) fill_hseg(ctx, l + g, r - g, mid, seg_t);
+  if (mask & SEG_D) fill_hseg(ctx, l + g, r - g, bot, seg_t);
+  if (mask & SEG_F) fill_vseg(ctx, l, top + g, mid - g, seg_t);
+  if (mask & SEG_B) fill_vseg(ctx, r, top + g, mid - g, seg_t);
+  if (mask & SEG_E) fill_vseg(ctx, l, mid + g, bot - g, seg_t);
+  if (mask & SEG_C) fill_vseg(ctx, r, mid + g, bot - g, seg_t);
   if (mask & SEG_PLUS_V) {
     int16_t reach = cell.size.h / 3;  // short verticals read as a lump
-    fill_vseg(ctx, cx, mid - reach, mid - g, t);
-    fill_vseg(ctx, cx, mid + g, mid + reach, t);
+    fill_vseg(ctx, cx, mid - reach, mid - g, seg_t);
+    fill_vseg(ctx, cx, mid + g, mid + reach, seg_t);
   }
   if (mask & (SEG_DIAG_GT | SEG_DIAG_LT)) {
     int16_t inset = cell.size.h / 6;
@@ -81,9 +84,21 @@ static void draw_segments(GContext *ctx, uint16_t mask, GRect cell, int16_t t) {
     GPoint tip = GPoint(gt ? r : l, mid);
     GPoint a = GPoint(gt ? l : r, top + inset);
     GPoint b = GPoint(gt ? l : r, bot - inset);
-    draw_line_w(ctx, a, tip, (uint8_t)t);
-    draw_line_w(ctx, tip, b, (uint8_t)t);
+    draw_line_w(ctx, a, tip, (uint8_t)seg_t);
+    draw_line_w(ctx, tip, b, (uint8_t)seg_t);
   }
+}
+
+// Thickness of a ghost segment at this level.
+static int16_t ghost_thickness(int16_t t, uint8_t level) {
+  int16_t g;
+  switch (level) {
+    case 1:  g = t / 3; break;
+    case 2:  g = t * 2 / 3; break;
+    case 3:  g = t; break;
+    default: return 0;
+  }
+  return g < 1 ? 1 : g;
 }
 
 static void draw_separator(GContext *ctx, char ch, GRect cell, int16_t t) {
@@ -113,12 +128,13 @@ void segment_draw_text(GContext *ctx, const LineText *text, GPoint origin,
     GRect cell = GRect(x, origin.y, w, dg->h);
     bool ghost_only = c->flags & CF_GHOST;
     GColor lit = (c->flags & CF_DIM) ? colors->dim : colors->lit;
+    int16_t gt = ghost_thickness(dg->t, colors->ghost_level);
 
     if (sep) {
       if (ghost_only) {
-        if (colors->ghosting) {
+        if (gt > 0) {
           graphics_context_set_fill_color(ctx, colors->ghost);
-          draw_separator(ctx, c->ch, cell, dg->t);
+          draw_separator(ctx, c->ch, cell, gt);
         }
       } else {
         graphics_context_set_fill_color(ctx, lit);
@@ -127,15 +143,15 @@ void segment_draw_text(GContext *ctx, const LineText *text, GPoint origin,
     } else {
       uint16_t all = (c->kind == CELL_SIGN) ? SEG_ALL_SIGN : SEG_ALL_DIGIT;
       uint16_t on = ghost_only ? 0 : glyph_mask(c->ch);
-      if (colors->ghosting) {  // ghost cells stay blank without ghosting
+      if (gt > 0) {  // level 0: unlit segments are simply not drawn
         graphics_context_set_fill_color(ctx, colors->ghost);
         graphics_context_set_stroke_color(ctx, colors->ghost);
-        draw_segments(ctx, all & ~on, cell, dg->t);
+        draw_segments(ctx, all & ~on, cell, dg->t, gt);
       }
       if (on) {
         graphics_context_set_fill_color(ctx, lit);
         graphics_context_set_stroke_color(ctx, lit);
-        draw_segments(ctx, on, cell, dg->t);
+        draw_segments(ctx, on, cell, dg->t, dg->t);
       }
     }
     x += w + dg->spacing;

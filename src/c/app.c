@@ -68,7 +68,14 @@ static void load_counter(void) {
     counter_setup_for(&g_counter, 5 * 60000);
     return;
   }
-  if (g_counter.lap_stored > MAX_LAPS) g_counter.lap_stored = 0;
+  // Anything out of range means the blob predates this build or is damaged.
+  if (g_counter.mode >= MODE_COUNT || g_counter.state > ST_STOPPED ||
+      g_counter.lap_stored > MAX_LAPS ||
+      g_counter.lap_stored > g_counter.lap_count) {
+    memset(&g_counter, 0, sizeof(g_counter));
+    counter_setup_for(&g_counter, 5 * 60000);
+    return;
+  }
   if (g_counter.lap_stored > 0 && persist_exists(K_LAPS0)) {
     persist_read_data(K_LAPS0, &g_counter.lap_ms[0],
                       LAPS_PER_KEY * sizeof(uint32_t));

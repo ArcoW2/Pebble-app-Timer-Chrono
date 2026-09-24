@@ -56,8 +56,10 @@ function boolOf(settings, key, fallback) {
 //  4 x (source, size, format, flags)]
 
 function encode(settings) {
-  var bytes = [CFG_VERSION, intOf(settings, 'REVEAL', 5),
-               boolOf(settings, 'GHOST', true) ? 1 : 0];
+  var ghost = intOf(settings, 'GHOST', 1);
+  if (ghost < 0) ghost = 0;
+  if (ghost > 3) ghost = 3;
+  var bytes = [CFG_VERSION, intOf(settings, 'REVEAL', 5), ghost];
   for (var m = 0; m < MODE_KEYS.length; m++) {
     var k = MODE_KEYS[m];
     var def = buildConfig.DEFAULTS[k];

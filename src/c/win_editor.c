@@ -228,7 +228,7 @@ static void draw_value_editor(GContext *ctx) {
     .lit = s_palette.fg,
     .dim = s_palette.dim,
     .ghost = s_palette.ghost,
-    .ghosting = false,   // every digit matters while editing
+    .ghost_level = 0,   // every digit matters while editing
   };
   // Remember where each field sits, for taps.
   for (uint8_t i = 0; i < s_ed.nfields; i++) s_ed.frect[i] = GRect(0, 0, 0, 0);

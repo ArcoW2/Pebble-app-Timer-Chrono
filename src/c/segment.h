@@ -9,8 +9,8 @@
 typedef struct {
   GColor lit;       // colour for lit segments (per line colour class)
   GColor dim;       // CF_DIM cells
-  GColor ghost;     // unlit segments
-  bool   ghosting;  // draw unlit segments as ghosts
+  GColor  ghost;        // unlit segments
+  uint8_t ghost_level;  // 0 none .. 3 full thickness
 } SegColors;
 
 void segment_draw_text(GContext *ctx, const LineText *text, GPoint origin,

@@ -132,7 +132,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   SegColors colors = {
     .dim = s_palette.dim,
     .ghost = s_palette.ghost,
-    .ghosting = (g_phone.style & STYLE_GHOSTING) != 0,
+    .ghost_level = STYLE_GHOST_LEVEL(g_phone.style),
     .lit = s_palette.fg,
   };
   for (uint8_t i = 0; i < s_layout.n; i++) {

@@ -1,2 +1,5 @@
 build/
 node_modules/
+*.pbw
+test/test_runner
+test/cfg_runner

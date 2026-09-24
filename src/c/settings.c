@@ -57,7 +57,7 @@ void settings_phone_defaults(PhoneSettings *p) {
   memset(p, 0, sizeof(*p));
   p->version = PHONE_SETTINGS_VERSION;
   p->reveal_s = 5;
-  p->style = 1;  // faint by default: full ghosting fights the lit digits
+  p->style = 6;  // a little above the background
   for (int m = 0; m < MODE_COUNT; m++) {
     settings_mode_layout_default((Mode)m, &p->mode[m]);
   }

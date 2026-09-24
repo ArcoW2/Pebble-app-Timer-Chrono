@@ -56,9 +56,9 @@ function boolOf(settings, key, fallback) {
 //  4 x (source, size, format, flags)]
 
 function encode(settings) {
-  var ghost = intOf(settings, 'GHOST', 1);
+  var ghost = intOf(settings, 'GHOST', 6);
   if (ghost < 0) ghost = 0;
-  if (ghost > 3) ghost = 3;
+  if (ghost > 10) ghost = 10;
   var bytes = [CFG_VERSION, intOf(settings, 'REVEAL', 5), ghost];
   for (var m = 0; m < MODE_KEYS.length; m++) {
     var k = MODE_KEYS[m];

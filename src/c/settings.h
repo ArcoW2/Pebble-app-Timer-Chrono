@@ -66,10 +66,11 @@ typedef struct {
 
 #define PHONE_SETTINGS_VERSION 2  // bump whenever PhoneSettings changes shape
 
-// Ghost level 0-3: 0 none, 1 faint, 2 medium, 3 full-thickness segments.
-// Thickness, not colour: the palette has nothing between black and #555555.
-#define STYLE_GHOST_MASK 0x03
-#define STYLE_GHOST_MAX  3
+// Ghost level: 0 = no ghost segments. Otherwise, with w = MAX - level, the
+// ghost colour is (w * background + foreground) / (w + 1): a higher level
+// weighs the background less, so the ghost gets brighter.
+#define STYLE_GHOST_MASK 0x0F
+#define STYLE_GHOST_MAX  10
 #define STYLE_GHOST_LEVEL(style) ((uint8_t)((style) & STYLE_GHOST_MASK))
 
 typedef struct {

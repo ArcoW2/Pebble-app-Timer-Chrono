@@ -141,11 +141,12 @@ module.exports = function buildConfig(status) {
       type: 'slider',
       messageKey: 'GHOST',
       label: 'Ghost level',
-      description: '0 = off. Higher draws unlit segments thicker, for more ' +
-                   'of an LCD look. Too high and the lit digits lose contrast.',
-      defaultValue: 1,
+      description: '0 = off. Otherwise the unlit segments are mixed from the ' +
+                   'background and the digit colour: low values stay close to ' +
+                   'the background, high values approach the digits.',
+      defaultValue: 6,
       min: 0,
-      max: 3,
+      max: 10,
       step: 1
     }
   ];

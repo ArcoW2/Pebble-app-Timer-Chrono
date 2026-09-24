@@ -1,0 +1,93 @@
+{
+    "author": "Arco",
+    "dependencies": {
+        "pebble-clay": "^1.0.4"
+    },
+    "keywords": [
+        "pebble-app",
+        "timer",
+        "chrono",
+        "stopwatch"
+    ],
+    "name": "timer-chrono",
+    "pebble": {
+        "displayName": "Timer / Chrono",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "CFG",
+            "CFG_STATUS",
+            "REVEAL",
+            "GHOST",
+            "U_FG",
+            "U_BG",
+            "U_AC",
+            "U_L1_SRC",
+            "U_L1_SIZE",
+            "U_L1_FMT",
+            "U_L1_THR",
+            "U_L2_SRC",
+            "U_L2_SIZE",
+            "U_L2_FMT",
+            "U_L2_THR",
+            "U_L3_SRC",
+            "U_L3_SIZE",
+            "U_L3_FMT",
+            "U_L3_THR",
+            "U_L4_SRC",
+            "U_L4_SIZE",
+            "U_L4_FMT",
+            "U_L4_THR",
+            "F_FG",
+            "F_BG",
+            "F_AC",
+            "F_L1_SRC",
+            "F_L1_SIZE",
+            "F_L1_FMT",
+            "F_L1_THR",
+            "F_L2_SRC",
+            "F_L2_SIZE",
+            "F_L2_FMT",
+            "F_L2_THR",
+            "F_L3_SRC",
+            "F_L3_SIZE",
+            "F_L3_FMT",
+            "F_L3_THR",
+            "F_L4_SRC",
+            "F_L4_SIZE",
+            "F_L4_FMT",
+            "F_L4_THR",
+            "T_FG",
+            "T_BG",
+            "T_AC",
+            "T_L1_SRC",
+            "T_L1_SIZE",
+            "T_L1_FMT",
+            "T_L1_THR",
+            "T_L2_SRC",
+            "T_L2_SIZE",
+            "T_L2_FMT",
+            "T_L2_THR",
+            "T_L3_SRC",
+            "T_L3_SIZE",
+            "T_L3_FMT",
+            "T_L3_THR",
+            "T_L4_SRC",
+            "T_L4_SIZE",
+            "T_L4_FMT",
+            "T_L4_THR"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "emery"
+        ],
+        "uuid": "8f3c2b14-6d5e-4a97-9c21-7b4e0d5a1f62",
+        "watchapp": {
+            "watchface": false
+        }
+    },
+    "version": "1.0.0"
+}

@@ -242,6 +242,31 @@ static void test_auto_format(void) {
   CHECK(lines_resolve_format(SRC_TOTAL, FMT_DHMS, &c, 5000) == FMT_DHMS);
 }
 
+// A line that cannot carry its size steps down a whole class, so the box,
+// the gutter icon and the label all describe the same thing.
+static void test_size_step_down(void) {
+  struct { uint8_t asked, fmt, expect; } CASES[] = {
+    { SIZE_XL, FMT_MS,   SIZE_XL },
+    { SIZE_XL, FMT_HMS,  SIZE_L },
+    { SIZE_XL, FMT_DHMS, SIZE_M },
+    { SIZE_L,  FMT_DHMS, SIZE_M },
+    { SIZE_M,  FMT_DHMS, SIZE_M },
+  };
+  for (unsigned i = 0; i < sizeof(CASES) / sizeof(CASES[0]); i++) {
+    ModeLayout ml;
+    memset(&ml, 0, sizeof(ml));
+    ml.nlines = 1;
+    ml.lines[0] = (LineCfg){ SRC_TOTAL, CASES[i].asked, CASES[i].fmt, 0 };
+    uint8_t f[1] = { CASES[i].fmt };
+    Layout l;
+    CHECK(layout_compute(&ml, f, &l));
+    CHECK(l.g[0].size == CASES[i].expect);
+    CHECK(l.g[0].h == (l.g[0].size == SIZE_XL ? 96
+                       : l.g[0].size == SIZE_L ? 62
+                       : l.g[0].size == SIZE_M ? 42 : 28));
+  }
+}
+
 int main(void) {
   test_format();
   test_next_change();
@@ -250,6 +275,7 @@ int main(void) {
   test_lines_and_layout();
   test_xl_combinations();
   test_auto_format();
+  test_size_step_down();
   printf("%d passed, %d failed\n", s_pass, s_fail);
   return s_fail ? 1 : 0;
 }

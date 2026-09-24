@@ -101,8 +101,9 @@ static void apply_button_map(void) {
 // ==== DRAWING ====
 
 static void draw_gutter(GContext *ctx, const LineGeom *g, const LineCfg *lc) {
-  int16_t isz = g->h >= 50 ? 16 : (g->h >= 38 ? 14 : 12);
-  bool with_label = g->h >= 38;
+  static const int16_t ICON_SZ[4] = { 16, 14, 12, 20 };  // L, M, S, XL
+  int16_t isz = ICON_SZ[g->size < 4 ? g->size : 1];
+  bool with_label = (g->size != SIZE_S);
   int16_t iy = with_label ? g->y + 4 : g->y + (g->h - isz) / 2;
   icon_draw(ctx, icon_for_source(lc->source), GRect(2, iy, isz, isz), s_palette.accent);
   if (!with_label) return;

@@ -25,6 +25,7 @@ typedef struct {
 } DigitGeom;
 
 typedef struct {
+  uint8_t   size;         // the size actually used (may be a class smaller)
   int16_t   y, h;         // line box
   int16_t   gutter_w;     // indicator column
   int16_t   text_x;       // left edge of the digit text (right aligned)

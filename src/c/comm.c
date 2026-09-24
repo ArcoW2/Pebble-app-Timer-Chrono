@@ -69,8 +69,13 @@ static void apply_settings(const PhoneSettings *incoming) {
       bad_line = probe.error_line;
       bad_error = probe.error;
     }
+    // Only the lines are at fault: keep the previous lines but take the
+    // colours from this config, or a rejected layout would silently revert
+    // colour changes too.
     rejected++;
-    merged.mode[m] = g_phone.mode[m];  // keep what was there
+    merged.mode[m].nlines = g_phone.mode[m].nlines;
+    memcpy(merged.mode[m].lines, g_phone.mode[m].lines,
+           sizeof(merged.mode[m].lines));
   }
 
   g_phone = merged;

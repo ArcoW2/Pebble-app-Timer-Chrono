@@ -31,7 +31,10 @@ typedef struct {
   int16_t   text_x;       // left edge of the digit text (right aligned)
   int16_t   text_w;
   int16_t   text_y;
-  DigitGeom dg;
+  DigitGeom dg;           // normal: no overflow/sign cell drawn
+  DigitGeom dg_sign;      // same height, narrower cells, sign cell shown
+  int16_t   text_x_sign;
+  int16_t   text_w_sign;
 } LineGeom;
 
 typedef enum { LAYOUT_OK = 0, LAYOUT_TOO_TALL, LAYOUT_TOO_WIDE } LayoutError;

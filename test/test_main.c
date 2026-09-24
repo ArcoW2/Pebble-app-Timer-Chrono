@@ -248,8 +248,8 @@ static void test_size_step_down(void) {
   struct { uint8_t asked, fmt, expect; } CASES[] = {
     { SIZE_XL, FMT_MS,   SIZE_XL },
     { SIZE_XL, FMT_HMS,  SIZE_L },
-    { SIZE_XL, FMT_DHMS, SIZE_M },
-    { SIZE_L,  FMT_DHMS, SIZE_M },
+    { SIZE_XL, FMT_DHMS, SIZE_L },
+    { SIZE_L,  FMT_DHMS, SIZE_L },
     { SIZE_M,  FMT_DHMS, SIZE_M },
   };
   for (unsigned i = 0; i < sizeof(CASES) / sizeof(CASES[0]); i++) {
@@ -267,6 +267,27 @@ static void test_size_step_down(void) {
   }
 }
 
+// The sign cell is not paid for until it is shown: the same format fits
+// taller digits than it would with the cell always reserved.
+static void test_sign_cell_width(void) {
+  ModeLayout ml;
+  memset(&ml, 0, sizeof(ml));
+  ml.nlines = 1;
+  ml.lines[0] = (LineCfg){ SRC_REMAINING, SIZE_L, FMT_HMS, 0 };
+  uint8_t f[1] = { FMT_HMS };
+  Layout l;
+  CHECK(layout_compute(&ml, f, &l));
+  CHECK(l.g[0].dg_sign.w < l.g[0].dg.w);        // narrower, not shorter
+  CHECK(l.g[0].dg_sign.h == l.g[0].dg.h);
+  CHECK(l.g[0].text_w_sign <= SCREEN_W - HINT_W - l.g[0].gutter_w);
+
+  LineText t;
+  format_line(&t, FMT_HMS, 1000, true, 1000, COL_FG);
+  CHECK(!format_text_needs_sign(&t));
+  format_line(&t, FMT_HMS, -1000, true, 1000, COL_RED);
+  CHECK(format_text_needs_sign(&t));            // overrun shows the '+'
+}
+
 int main(void) {
   test_format();
   test_next_change();
@@ -276,6 +297,7 @@ int main(void) {
   test_xl_combinations();
   test_auto_format();
   test_size_step_down();
+  test_sign_cell_width();
   printf("%d passed, %d failed\n", s_pass, s_fail);
   return s_fail ? 1 : 0;
 }

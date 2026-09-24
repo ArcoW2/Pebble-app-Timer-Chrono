@@ -122,6 +122,15 @@ static bool slot_in_ghost_field(char t, const Fields *fl) {
   return false;
 }
 
+void format_counts_base(Format f, uint8_t *wide, uint8_t *narrow) {
+  format_counts(f, wide, narrow);
+  if (template_for(f)[0] == 'O' && *wide > 0) (*wide)--;
+}
+
+bool format_text_needs_sign(const LineText *t) {
+  return t->n > 0 && t->cells[0].kind == CELL_SIGN && t->cells[0].ch != ' ';
+}
+
 void format_line(LineText *out, Format f, int64_t value, bool has, int64_t res_ms,
                  uint8_t color) {
   const char *tp = template_for(f);

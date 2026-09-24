@@ -38,6 +38,14 @@ typedef struct {
 // Wide cells (digits, sign, 'd') and narrow cells (':' '.') of a format.
 void format_counts(Format f, uint8_t *wide, uint8_t *narrow);
 
+// Same, without the leading overflow/sign cell, which stays blank unless a
+// value overruns or saturates. Layouts are fitted to this, so the digits
+// use the full width in the normal case.
+void format_counts_base(Format f, uint8_t *wide, uint8_t *narrow);
+
+// True when the leading cell actually shows something ('+' or '>').
+bool format_text_needs_sign(const LineText *t);
+
 // value: milliseconds (FMT_HM: ms of the day; FMT_COUNT2: a plain count).
 // res_ms: display resolution (100, 1000, 10000, 60000).
 void format_line(LineText *out, Format f, int64_t value, bool has, int64_t res_ms,

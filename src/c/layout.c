@@ -72,7 +72,7 @@ static const int8_t NEXT_SMALLER[4] = { SIZE_M, SIZE_S, -1, SIZE_L };
 static bool fit_line_size(uint8_t wanted, Format f, uint8_t *out_size, DigitGeom *dg) {
   uint8_t sz = wanted < SIZE_COUNT ? wanted : SIZE_M;
   uint8_t wide, narrow;
-  format_counts(f, &wide, &narrow);
+  format_counts_base(f, &wide, &narrow);  // the sign cell is usually blank
   for (;;) {
     int16_t avail = SCREEN_W - HINT_W - GUTTER_W[sz] - 4;
     int8_t next = NEXT_SMALLER[sz];
@@ -102,6 +102,22 @@ bool layout_compute(const ModeLayout *ml, const uint8_t *fmts, Layout *out) {
     }
   }
 
+  // Pass 1b: the same height with the overflow/sign cell added, by making
+  // the cells narrower rather than by dropping a size.
+  for (uint8_t i = 0; i < ml->nlines; i++) {
+    LineGeom *g = &out->g[i];
+    uint8_t wide, narrow;
+    format_counts((Format)fmts[i], &wide, &narrow);
+    int16_t avail = SCREEN_W - HINT_W - GUTTER_W[g->size] - 4;
+    g->dg_sign = g->dg;
+    int16_t fixed = narrow * g->dg.narrow_w + (wide + narrow - 1) * g->dg.spacing;
+    int16_t w = wide ? (avail - fixed) / wide : g->dg.w;
+    int16_t wmin = max16(3, g->dg.h * 25 / 100);
+    if (w < wmin) w = wmin;
+    if (w > g->dg.w) w = g->dg.w;
+    g->dg_sign.w = w;
+  }
+
   // Pass 2: stack and centre the resulting boxes.
   int16_t total = 0;
   for (uint8_t i = 0; i < ml->nlines; i++) {
@@ -121,10 +137,13 @@ bool layout_compute(const ModeLayout *ml, const uint8_t *fmts, Layout *out) {
     g->h = BOX_H[g->size];
     g->gutter_w = GUTTER_W[g->size];
 
-    uint8_t wide, narrow;
-    format_counts((Format)fmts[i], &wide, &narrow);
+    uint8_t wide, narrow, wide_all;
+    format_counts_base((Format)fmts[i], &wide, &narrow);
+    format_counts((Format)fmts[i], &wide_all, &narrow);
     g->text_w = layout_text_width(wide, narrow, &g->dg);
     g->text_x = SCREEN_W - HINT_W - 2 - g->text_w;
+    g->text_w_sign = layout_text_width(wide_all, narrow, &g->dg_sign);
+    g->text_x_sign = SCREEN_W - HINT_W - 2 - g->text_w_sign;
     g->text_y = g->y + (g->h - g->dg.h) / 2;
     y += g->h;
   }

@@ -146,7 +146,18 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     const LineGeom *g = &s_layout.g[i];
     draw_gutter(ctx, g, &ml->lines[i]);
     colors.lit = colors_for_class(&s_palette, s_text[i].color);
-    segment_draw_text(ctx, &s_text[i], GPoint(g->text_x, g->text_y), &g->dg, &colors);
+    if (format_text_needs_sign(&s_text[i])) {
+      // Overrun or saturation: narrower cells make room for the sign.
+      segment_draw_text(ctx, &s_text[i], GPoint(g->text_x_sign, g->text_y), &g->dg_sign,
+                        &colors);
+    } else {
+      LineText bare = s_text[i];   // leading blank sign cell costs nothing
+      if (bare.n > 0 && bare.cells[0].kind == CELL_SIGN) {
+        memmove(&bare.cells[0], &bare.cells[1], (bare.n - 1) * sizeof(Cell));
+        bare.n--;
+      }
+      segment_draw_text(ctx, &bare, GPoint(g->text_x, g->text_y), &g->dg, &colors);
+    }
   }
   draw_mode_arrow(ctx);
 

@@ -56,6 +56,13 @@ static void fill_vseg(GContext *ctx, int16_t x, int16_t y0, int16_t y1, int16_t 
   draw_fill_poly(ctx, p, 6);
 }
 
+// Vertical strokes read heavier than horizontal ones at large sizes, so the
+// biggest digits get slightly thinner verticals. Their outer edges stay on
+// the cell boundary, which keeps the gap between digits at 1 px.
+static int16_t vertical_thickness(int16_t t) {
+  return (t >= 8) ? max_i16(2, t * 5 / 6) : t;
+}
+
 static void draw_segments(GContext *ctx, uint16_t mask, GRect cell, int16_t t,
                           int16_t seg_t) {
   int16_t l = cell.origin.x + t / 2;
@@ -67,20 +74,23 @@ static void draw_segments(GContext *ctx, uint16_t mask, GRect cell, int16_t t,
   // turn into scattered strokes.
   const int16_t g = 1;
   int16_t cx = cell.origin.x + cell.size.w / 2;
+  int16_t vt = vertical_thickness(seg_t);
+  int16_t lv = cell.origin.x + vt / 2;
+  int16_t rv = cell.origin.x + cell.size.w - 1 - vt / 2;
 
   // Segment centres stay put; only the drawn thickness varies, so a ghost
   // sits exactly where its lit counterpart would.
   if (mask & SEG_A) fill_hseg(ctx, l + g, r - g, top, seg_t);
   if (mask & SEG_G) fill_hseg(ctx, l + g, r - g, mid, seg_t);
   if (mask & SEG_D) fill_hseg(ctx, l + g, r - g, bot, seg_t);
-  if (mask & SEG_F) fill_vseg(ctx, l, top + g, mid - g, seg_t);
-  if (mask & SEG_B) fill_vseg(ctx, r, top + g, mid - g, seg_t);
-  if (mask & SEG_E) fill_vseg(ctx, l, mid + g, bot - g, seg_t);
-  if (mask & SEG_C) fill_vseg(ctx, r, mid + g, bot - g, seg_t);
+  if (mask & SEG_F) fill_vseg(ctx, lv, top + g, mid - g, vt);
+  if (mask & SEG_B) fill_vseg(ctx, rv, top + g, mid - g, vt);
+  if (mask & SEG_E) fill_vseg(ctx, lv, mid + g, bot - g, vt);
+  if (mask & SEG_C) fill_vseg(ctx, rv, mid + g, bot - g, vt);
   if (mask & SEG_PLUS_V) {
     int16_t reach = cell.size.h / 3;  // short verticals read as a lump
-    fill_vseg(ctx, cx, mid - reach, mid - g, seg_t);
-    fill_vseg(ctx, cx, mid + g, mid + reach, seg_t);
+    fill_vseg(ctx, cx, mid - reach, mid - g, vt);
+    fill_vseg(ctx, cx, mid + g, mid + reach, vt);
   }
   if (mask & (SEG_DIAG_GT | SEG_DIAG_LT)) {
     int16_t inset = cell.size.h / 6;

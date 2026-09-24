@@ -109,12 +109,13 @@ typedef struct {
   uint8_t  lapfb_out;      // lap press feedback
 } AlarmCfg;
 
-#define WATCH_SETTINGS_VERSION 1
+#define WATCH_SETTINGS_VERSION 2
 
 typedef struct {
   uint8_t  version;
   uint32_t thr_coarse_ms;  // above: 1 min resolution
   uint32_t thr_fine_ms;    // above: 10 s; below: finest
+  uint8_t  click_out;      // feedback on every button press
   AlarmCfg mode[MODE_COUNT];
 } WatchSettings;
 

@@ -99,6 +99,14 @@ void alarms_lap_feedback(void) {
   if (out == OUT_SOUND || out == OUT_BOTH) play(NOTE, ARRAY_LENGTH(NOTE));
 }
 
+void alarms_click_tick(void) {
+  static const uint32_t CLICK[] = { 18 };
+  static const SpeakerNote NOTE[] = { { 92, 0, 25, 0, 0 } };
+  uint8_t out = g_watch.click_out;
+  if (out == OUT_VIBE || out == OUT_BOTH) vibrate(CLICK, ARRAY_LENGTH(CLICK));
+  if (out == OUT_SOUND || out == OUT_BOTH) play(NOTE, ARRAY_LENGTH(NOTE));
+}
+
 void alarms_clamp_tick(void) {
   static const uint32_t TICK[] = { 25 };
   vibrate(TICK, ARRAY_LENGTH(TICK));

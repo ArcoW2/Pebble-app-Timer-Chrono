@@ -18,3 +18,4 @@ void alarms_note_interaction(void);
 
 void alarms_lap_feedback(void);
 void alarms_clamp_tick(void);   // short tick when an edit hits its limit
+void alarms_click_tick(void);   // very short feedback on a button press

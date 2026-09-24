@@ -114,6 +114,7 @@ static void raw_down_handler(ClickRecognizerRef rec, void *context) {
   int8_t i = index_for(click_recognizer_get_button_id(rec));
   if (i < 0 || b->held >= 0) return;
   alarms_note_interaction();
+  alarms_click_tick();
   const ButtonDef d = b->map.b[i];
   int64_t now = app_now_ms();
   if (d.repeat) {
@@ -151,6 +152,7 @@ static void raw_up_handler(ClickRecognizerRef rec, void *context) {
 static void back_click_handler(ClickRecognizerRef rec, void *context) {
   Buttons *b = context;
   alarms_note_interaction();
+  alarms_click_tick();
   if (b->map.back_act) {
     fire(b, b->map.back_act, app_now_ms());
   } else {

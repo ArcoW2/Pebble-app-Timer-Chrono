@@ -9,10 +9,10 @@
 #include "layout.h"
 #include "touchin.h"
 
-#define ROW_H      24
-#define HEADER_H   20
-#define ROW_FONT   "RESOURCE_ID_GOTHIC_14"
-#define HEAD_FONT  "RESOURCE_ID_GOTHIC_14_BOLD"
+#define ROW_H      30
+#define HEADER_H   24
+#define ROW_FONT   "RESOURCE_ID_GOTHIC_18"
+#define HEAD_FONT  "RESOURCE_ID_GOTHIC_18_BOLD"
 
 enum { ACT_SCROLL_UP = 1, ACT_SCROLL_DOWN, ACT_CLOSE };
 
@@ -63,17 +63,17 @@ static void draw_row(GContext *ctx, uint8_t row, int16_t y) {
 
   GFont font = fonts_get_system_font(ROW_FONT);
   graphics_context_set_text_color(ctx, s_palette.fg);
-  graphics_draw_text(ctx, nr_s, font, GRect(2, y, 24, ROW_H), GTextOverflowModeFill,
+  graphics_draw_text(ctx, nr_s, font, GRect(2, y, 26, ROW_H), GTextOverflowModeFill,
                      GTextAlignmentLeft, NULL);
-  graphics_draw_text(ctx, lap_s, font, GRect(26, y, 52, ROW_H), GTextOverflowModeFill,
+  graphics_draw_text(ctx, lap_s, font, GRect(28, y, 58, ROW_H), GTextOverflowModeFill,
                      GTextAlignmentLeft, NULL);
   bool faster = (k > 0 && lap < g_counter.lap_ms[k - 1]);
   graphics_context_set_text_color(ctx, k == 0 ? s_palette.fg
                                               : (faster ? s_palette.green : s_palette.red));
-  graphics_draw_text(ctx, delta_s, font, GRect(78, y, 52, ROW_H), GTextOverflowModeFill,
+  graphics_draw_text(ctx, delta_s, font, GRect(86, y, 56, ROW_H), GTextOverflowModeFill,
                      GTextAlignmentLeft, NULL);
   graphics_context_set_text_color(ctx, s_palette.dim);
-  graphics_draw_text(ctx, total_s, font, GRect(126, y, 46, ROW_H), GTextOverflowModeFill,
+  graphics_draw_text(ctx, total_s, font, GRect(132, y, 40, ROW_H), GTextOverflowModeFill,
                      GTextAlignmentRight, NULL);
   if (lap == g_counter.lap_best_ms) {
     icon_draw(ctx, IC_BEST, GRect(SCREEN_W - HINT_W - 12, y + 5, 11, 11),

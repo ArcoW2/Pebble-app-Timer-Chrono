@@ -23,6 +23,7 @@ typedef struct {
 static const Row GENERAL_ROWS[] = {
   { "Coarse threshold", RK_TIME, offsetof(WatchSettings, thr_coarse_ms), 0, true },
   { "Fine threshold",   RK_TIME, offsetof(WatchSettings, thr_fine_ms),   0, true },
+  { "Button feedback",  RK_ENUM, offsetof(WatchSettings, click_out), OPT_OUT, false },
 };
 
 static const Row UP_ROWS[] = {

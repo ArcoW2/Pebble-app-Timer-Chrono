@@ -68,6 +68,7 @@ void settings_watch_defaults(WatchSettings *w) {
   w->version = WATCH_SETTINGS_VERSION;
   w->thr_coarse_ms = 10 * 60 * 1000;
   w->thr_fine_ms = 60 * 1000;
+  w->click_out = OUT_VIBE;
   for (int m = 0; m < MODE_COUNT; m++) {
     AlarmCfg *a = &w->mode[m];
     a->lap_ref = REF_OFF;

@@ -33,7 +33,8 @@ bool layout_fit_digits(uint8_t wide, uint8_t narrow, int16_t avail_w, int16_t ma
                        int16_t min_h, DigitGeom *out) {
   if (wide == 0) return false;
   for (int16_t h = max_h; h >= min_h; h--) {
-    int16_t t = max16(2, h / 8);
+    // Small digits need proportionally thicker segments to stay readable.
+    int16_t t = max16(2, h < 26 ? h / 6 : (h < 40 ? h / 7 : h / 8));
     int16_t sp = max16(1, t / 3);
     int16_t wmin = h * 40 / 100;
     int16_t wmax = h * 60 / 100;

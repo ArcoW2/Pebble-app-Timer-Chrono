@@ -172,7 +172,7 @@ void icon_draw(GContext *ctx, uint8_t id, GRect box, GColor color) {
     .x = box.origin.x + (box.size.w - s) / 2,
     .y = box.origin.y + (box.size.h - s) / 2,
     .s = s,
-    .w = (uint8_t)(s >= 14 ? 2 : 1),
+    .w = (uint8_t)(s >= 22 ? 3 : (s >= 11 ? 2 : 1)),
   };
   graphics_context_set_antialiased(ctx, true);
   graphics_context_set_stroke_color(ctx, color);

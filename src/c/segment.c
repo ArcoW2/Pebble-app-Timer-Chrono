@@ -71,7 +71,7 @@ static void draw_segments(GContext *ctx, uint16_t mask, GRect cell, int16_t t) {
   if (mask & SEG_E) fill_vseg(ctx, l, mid + g, bot - g, t);
   if (mask & SEG_C) fill_vseg(ctx, r, mid + g, bot - g, t);
   if (mask & SEG_PLUS_V) {
-    int16_t reach = cell.size.h / 4;
+    int16_t reach = cell.size.h / 3;  // short verticals read as a lump
     fill_vseg(ctx, cx, mid - reach, mid - g, t);
     fill_vseg(ctx, cx, mid + g, mid + reach, t);
   }

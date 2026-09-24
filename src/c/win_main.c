@@ -220,6 +220,7 @@ static void recompute_layout(void) {
   }
   memset(s_text, 0, sizeof(s_text));
   refresh_values();
+  layer_mark_dirty(s_canvas);  // colours may change with the text unchanged
 }
 
 // ==== ACTIONS ====
@@ -242,7 +243,13 @@ static void on_action(uint8_t action, int64_t press_ms, void *ctx) {
     case ACT_RESET:   counter_reset(&g_counter); break;
     case ACT_RESTART: counter_reset(&g_counter); start_counter(press_ms); break;
     case ACT_LAP:
-      if (counter_lap(&g_counter, press_ms)) alarms_lap_feedback();
+      if (counter_lap(&g_counter, press_ms)) {
+        alarms_lap_feedback();
+        // A lap must be visible even when no line shows lap data.
+        static char lap_notice[24];
+        snprintf(lap_notice, sizeof(lap_notice), "Lap %u", g_counter.lap_count);
+        win_main_notice(lap_notice);
+      }
       break;
     case ACT_EDIT_RUN: win_editor_push_running(); return;
     case ACT_SETUP:    win_editor_push_setup(); return;

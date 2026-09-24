@@ -44,8 +44,8 @@ static void draw_hold_arrow(GContext *ctx, int16_t x, int16_t y, GColor c,
                             GColor accent, int16_t fill_px) {
   graphics_context_set_stroke_color(ctx, c);
   graphics_context_set_fill_color(ctx, c);
-  draw_line_w(ctx, GPoint(x, y), GPoint(x + ICON - 4, y), 2);
-  GPoint head[3] = { { x + ICON - 5, y - 3 }, { x + ICON, y }, { x + ICON - 5, y + 3 } };
+  draw_line_w(ctx, GPoint(x, y), GPoint(x + ICON - 7, y), 3);
+  GPoint head[3] = { { x + ICON - 8, y - 5 }, { x + ICON, y }, { x + ICON - 8, y + 5 } };
   draw_fill_poly(ctx, head, 3);
   if (fill_px > 0) {
     graphics_context_set_fill_color(ctx, accent);

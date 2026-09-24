@@ -28,11 +28,19 @@ static uint8_t s_recent_count;
 
 // ==== TIME ====
 
+// Monotonic: time_ms() samples seconds and milliseconds separately, so a
+// composed value can step back by up to a second across a boundary. A
+// displayed timer must never run backwards. A real clock change (more than
+// a minute either way) is let through.
 int64_t app_now_ms(void) {
+  static int64_t s_last;
   time_t s;
   uint16_t ms;
   time_ms(&s, &ms);
-  return (int64_t)s * 1000 + ms;
+  int64_t now = (int64_t)s * 1000 + ms;
+  if (now < s_last && s_last - now < 60000) return s_last;
+  s_last = now;
+  return now;
 }
 
 const AlarmCfg *app_alarm_cfg(void) {
@@ -103,12 +111,18 @@ void app_load(void) {
   settings_phone_defaults(&g_phone);
   settings_watch_defaults(&g_watch);
   if (known && persist_exists(K_PHONE)) {
-    persist_read_data(K_PHONE, &g_phone, sizeof(g_phone));
-    if (g_phone.version != PHONE_SETTINGS_VERSION) settings_phone_defaults(&g_phone);
+    // A stored blob from an older struct would be read past its end, so the
+    // size must match exactly, not just the version byte.
+    int read = persist_read_data(K_PHONE, &g_phone, sizeof(g_phone));
+    if (read != (int)sizeof(g_phone) || g_phone.version != PHONE_SETTINGS_VERSION) {
+      settings_phone_defaults(&g_phone);
+    }
   }
   if (known && persist_exists(K_WATCH)) {
-    persist_read_data(K_WATCH, &g_watch, sizeof(g_watch));
-    if (g_watch.version != WATCH_SETTINGS_VERSION) settings_watch_defaults(&g_watch);
+    int read = persist_read_data(K_WATCH, &g_watch, sizeof(g_watch));
+    if (read != (int)sizeof(g_watch) || g_watch.version != WATCH_SETTINGS_VERSION) {
+      settings_watch_defaults(&g_watch);
+    }
   }
   if (known) {
     load_counter();

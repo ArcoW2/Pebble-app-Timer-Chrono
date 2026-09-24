@@ -21,6 +21,10 @@
 #define INFO_FONT_KEY  "RESOURCE_ID_GOTHIC_14"
 #define MAX_FIELDS     4
 #define DOUBLE_TAP_WINDOW_MS 300
+#define MODE_ROW_Y0    40
+#define MODE_ROW_H     42
+#define MODE_ROW_STEP  46
+#define MODE_FONT_KEY  "RESOURCE_ID_GOTHIC_24_BOLD"
 
 typedef enum { ED_SETUP_MODE = 0, ED_SETUP_VALUE, ED_RUNNING, ED_VALUE } EdKind;
 typedef enum { FLD_DAYS = 0, FLD_HOURS, FLD_MINS, FLD_SECS, FLD_DAYOFF } FieldKind;
@@ -51,6 +55,7 @@ static struct {
 } s_ed;
 
 static void editor_confirm(void);
+static void editor_cancel(void);
 
 // ==== FIELDS <-> VALUE ====
 
@@ -172,22 +177,27 @@ static void draw_info(GContext *ctx, const char *text, int16_t y, GColor color) 
                      GTextAlignmentCenter, NULL);
 }
 
+static GRect mode_row_rect(uint8_t index) {
+  return GRect(4, (int16_t)(MODE_ROW_Y0 + index * MODE_ROW_STEP),
+               SCREEN_W - HINT_W - 8, MODE_ROW_H);
+}
+
 static void draw_mode_options(GContext *ctx) {
-  static const char *NAMES[MODE_COUNT] = { "Count up", "Count down for",
-                                           "Count down until" };
+  static const char *NAMES[MODE_COUNT] = { "Count up", "Down for", "Down until" };
   static const uint8_t ICONS[MODE_COUNT] = { IC_MODE_UP, IC_MODE_DOWN, IC_MODE_UNTIL };
   for (uint8_t i = 0; i < MODE_COUNT; i++) {
-    int16_t y = 50 + i * 34;
+    GRect row = mode_row_rect(i);
     bool sel = (s_ed.mode_sel == i);
     if (sel) {
       graphics_context_set_fill_color(ctx, s_palette.accent);
-      graphics_fill_rect(ctx, GRect(4, y, SCREEN_W - HINT_W - 8, 30), 4, GCornersAll);
+      graphics_fill_rect(ctx, row, 6, GCornersAll);
     }
-    icon_draw(ctx, ICONS[i], GRect(10, y + 6, 18, 18), sel ? s_palette.bg : s_palette.fg);
-    graphics_context_set_text_color(ctx, sel ? s_palette.bg : s_palette.fg);
-    graphics_draw_text(ctx, NAMES[i], fonts_get_system_font(INFO_FONT_KEY),
-                       GRect(34, y + 4, SCREEN_W - HINT_W - 40, 24), GTextOverflowModeFill,
-                       GTextAlignmentLeft, NULL);
+    GColor fg = sel ? s_palette.bg : s_palette.fg;
+    icon_draw(ctx, ICONS[i], GRect(10, row.origin.y + 9, 24, 24), fg);
+    graphics_context_set_text_color(ctx, fg);
+    graphics_draw_text(ctx, NAMES[i], fonts_get_system_font(MODE_FONT_KEY),
+                       GRect(42, row.origin.y + 4, SCREEN_W - HINT_W - 48, 32),
+                       GTextOverflowModeFill, GTextAlignmentLeft, NULL);
   }
 }
 
@@ -233,6 +243,12 @@ static void draw_value_editor(GContext *ctx) {
     cx += cw + s_ed.dg.spacing;
   }
   segment_draw_text(ctx, &t, GPoint(x, y), &s_ed.dg, &colors);
+  if (s_ed.focus < s_ed.nfields && s_ed.frect[s_ed.focus].size.w > 0) {
+    GRect f = s_ed.frect[s_ed.focus];   // dim vs lit alone is too subtle
+    graphics_context_set_fill_color(ctx, s_palette.accent);
+    graphics_fill_rect(ctx, GRect(f.origin.x, y + s_ed.dg.h + 3, f.size.w, 3), 1,
+                       GCornersAll);
+  }
 
   if (s_ed.kind == ED_SETUP_VALUE && g_counter.mode == MODE_DOWN_UNTIL) {
     static char line[40];
@@ -275,7 +291,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 static void apply_button_map(void) {
   ButtonMap m;
   memset(&m, 0, sizeof(m));
-  m.back_icon = IC_CANCEL;
+  bool steps_back = (s_ed.kind != ED_SETUP_MODE && s_ed.focus > 0);
+  m.back_icon = steps_back ? IC_BACK : IC_CANCEL;
   m.back_act = ACT_CANCEL;
   if (s_ed.kind == ED_SETUP_MODE) {
     m.b[BTN_UP] = (ButtonDef){ IC_UP, IC_NONE, ACT_UP, 0, false };
@@ -392,6 +409,16 @@ static void editor_confirm(void) {
   window_stack_pop(true);
 }
 
+static void editor_back(void) {
+  if (s_ed.kind != ED_SETUP_MODE && s_ed.focus > 0) {
+    s_ed.focus--;                     // step back through the fields first
+    apply_button_map();
+    layer_mark_dirty(s_canvas);
+    return;
+  }
+  editor_cancel();
+}
+
 static void editor_cancel(void) {
   if (s_ed.kind == ED_SETUP_VALUE) {  // back to the mode step
     s_ed.kind = ED_SETUP_MODE;
@@ -426,7 +453,7 @@ static void on_action(uint8_t action, int64_t press_ms, void *ctx) {
       if (s_ed.kind == ED_SETUP_MODE) enter_value_step(); else focus_next();
       break;
     case ACT_CONFIRM: editor_confirm(); break;
-    case ACT_CANCEL:  editor_cancel(); break;
+    case ACT_CANCEL:  editor_back(); break;
     default: break;
   }
 }
@@ -441,7 +468,7 @@ static void check_timer_fired(void *data) {
 static void on_tap(GPoint where, void *ctx) {
   if (s_ed.kind == ED_SETUP_MODE) {
     for (uint8_t i = 0; i < MODE_COUNT; i++) {
-      GRect r = GRect(4, 50 + i * 34, SCREEN_W - HINT_W - 8, 30);
+      GRect r = mode_row_rect(i);
       if (grect_contains_point(&r, &where)) {
         s_ed.mode_sel = i;
         layer_mark_dirty(s_canvas);

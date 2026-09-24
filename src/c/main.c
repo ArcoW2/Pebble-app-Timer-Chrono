@@ -10,7 +10,6 @@
 #include "win_editor.h"
 #include "win_main.h"
 
-
 static void init(void) {
   app_load();
   comm_open();

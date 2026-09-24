@@ -19,6 +19,12 @@ static const uint8_t PALETTE_ARGB8[] = {
   GColorOrangeARGB8,         // 10
   GColorVividCeruleanARGB8,  // 11
   GColorShockingPinkARGB8,   // 12
+  GColorRedARGB8,            // 13
+  GColorGreenARGB8,          // 14
+  GColorDarkCandyAppleRedARGB8,  // 15
+  GColorIslamicGreenARGB8,   // 16
+  GColorFollyARGB8,          // 17
+  GColorBulgarianRoseARGB8,  // 18
 };
 #define PALETTE_COUNT (sizeof(PALETTE_ARGB8) / sizeof(PALETTE_ARGB8[0]))
 
@@ -30,7 +36,8 @@ static GColor palette_color(uint8_t index, uint8_t fallback) {
 }
 
 static bool is_light(uint8_t index) {
-  return index == 1 || index == 6 || index == 7 || index == 8 || index == 9;
+  return index == 1 || index == 6 || index == 7 || index == 8 || index == 9 ||
+         index == 13 || index == 14 || index == 17;
 }
 
 // Ghost segments: a step away from the background, subtle but visible.
@@ -57,8 +64,10 @@ void colors_for_mode(uint8_t mode, Palette *out) {
   out->accent = palette_color(ml->accent, 10);
   out->ghost = ghost_for_bg(bg);
   out->dim = light ? GColorDarkGray : GColorLightGray;
-  out->red = light ? GColorDarkCandyAppleRed : GColorRed;
-  out->green = light ? GColorIslamicGreen : GColorGreen;
+  // Behind / ahead are chosen per mode, so they can stay readable on a
+  // reddish or greenish background.
+  out->red = palette_color(ml->behind, light ? 15 : 13);
+  out->green = palette_color(ml->ahead, light ? 16 : 14);
 }
 
 GColor colors_for_class(const Palette *p, uint8_t color_class) {

@@ -58,11 +58,13 @@ typedef struct {
   uint8_t fg;       // palette index
   uint8_t bg;
   uint8_t accent;
+  uint8_t behind;   // overrun and "slower than the reference"
+  uint8_t ahead;    // "faster than the reference"
   uint8_t nlines;
   LineCfg lines[MAX_LINES];
 } ModeLayout;
 
-#define PHONE_SETTINGS_VERSION 1
+#define PHONE_SETTINGS_VERSION 2  // bump whenever PhoneSettings changes shape
 
 #define STYLE_GHOSTING 0x01
 
@@ -74,9 +76,10 @@ typedef struct {
 } PhoneSettings;
 
 // Phone config wire format: [version, reveal_s, style, then per mode:
-// fg, bg, accent, nlines, 4 x (source, size, format, flags)].
+// fg, bg, accent, behind, ahead, nlines, 4 x (source, size, format, flags)].
 #define PHONE_CFG_HEADER 3
-#define PHONE_CFG_BYTES (PHONE_CFG_HEADER + MODE_COUNT * (4 + MAX_LINES * 4))
+#define PHONE_CFG_MODE (6 + MAX_LINES * 4)
+#define PHONE_CFG_BYTES (PHONE_CFG_HEADER + MODE_COUNT * PHONE_CFG_MODE)
 
 // ---- watch settings ----
 typedef enum { OUT_OFF = 0, OUT_VIBE, OUT_SOUND, OUT_BOTH, OUT_COUNT } Output;

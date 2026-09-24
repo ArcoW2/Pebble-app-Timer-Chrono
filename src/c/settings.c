@@ -6,8 +6,9 @@
 // Palette indices (see colors.c): 0 Black, 1 White, 2 Oxford blue,
 // 3 Dark gray, 4 Dark green, 5 Imperial purple, 6 Yellow, 7 Electric blue,
 // 8 Light gray, 9 Chrome yellow, 10 Orange, 11 Vivid cerulean,
-// 12 Shocking pink.
-#define PALETTE_COUNT 13
+// 12 Shocking pink, 13 Red, 14 Green, 15 Dark red, 16 Islamic green,
+// 17 Folly, 18 Bulgarian rose.
+#define PALETTE_COUNT 19
 
 // ==== HELPERS ====
 
@@ -27,6 +28,7 @@ void settings_mode_layout_default(Mode m, ModeLayout *out) {
   switch (m) {
     case MODE_UP:
       out->fg = 1; out->bg = 0; out->accent = 10;
+      out->behind = 13; out->ahead = 14;
       out->nlines = 3;
       out->lines[0] = line(SRC_TOTAL, SIZE_L, FMT_AUTO, LINE_FLAG_THRESHOLDS);
       out->lines[1] = line(SRC_CUR_LAP, SIZE_M, FMT_MS, LINE_FLAG_THRESHOLDS);
@@ -34,15 +36,19 @@ void settings_mode_layout_default(Mode m, ModeLayout *out) {
       break;
     case MODE_DOWN_FOR:
       out->fg = 1; out->bg = 2; out->accent = 7;
-      out->nlines = 2;
+      out->behind = 13; out->ahead = 14;
+      out->nlines = 3;
       out->lines[0] = line(SRC_REMAINING, SIZE_L, FMT_AUTO, LINE_FLAG_THRESHOLDS);
-      out->lines[1] = line(SRC_TOTAL, SIZE_S, FMT_AUTO, LINE_FLAG_THRESHOLDS);
+      out->lines[1] = line(SRC_CUR_LAP, SIZE_S, FMT_MS, LINE_FLAG_THRESHOLDS);
+      out->lines[2] = line(SRC_TOTAL, SIZE_S, FMT_AUTO, LINE_FLAG_THRESHOLDS);
       break;
     default:  // MODE_DOWN_UNTIL
       out->fg = 9; out->bg = 0; out->accent = 11;
-      out->nlines = 2;
+      out->behind = 13; out->ahead = 14;
+      out->nlines = 3;
       out->lines[0] = line(SRC_REMAINING, SIZE_L, FMT_AUTO, LINE_FLAG_THRESHOLDS);
-      out->lines[1] = line(SRC_UNTIL, SIZE_M, FMT_HM, 0);
+      out->lines[1] = line(SRC_CUR_LAP, SIZE_S, FMT_MS, LINE_FLAG_THRESHOLDS);
+      out->lines[2] = line(SRC_UNTIL, SIZE_S, FMT_HM, 0);
       break;
   }
 }
@@ -92,9 +98,11 @@ static void decode_mode(const uint8_t *d, ModeLayout *out, Mode m) {
   out->fg = clamp_enum(d[0], PALETTE_COUNT, def.fg);
   out->bg = clamp_enum(d[1], PALETTE_COUNT, def.bg);
   out->accent = clamp_enum(d[2], PALETTE_COUNT, def.accent);
+  out->behind = clamp_enum(d[3], PALETTE_COUNT, def.behind);
+  out->ahead = clamp_enum(d[4], PALETTE_COUNT, def.ahead);
   out->nlines = 0;
   for (int i = 0; i < MAX_LINES; i++) {
-    LineCfg l = line(d[4 + i * 4], d[5 + i * 4], d[6 + i * 4], d[7 + i * 4]);
+    LineCfg l = line(d[6 + i * 4], d[7 + i * 4], d[8 + i * 4], d[9 + i * 4]);
     sanitize_line(&l);
     if (l.source != SRC_NONE) out->lines[out->nlines++] = l;  // compact
   }
@@ -109,7 +117,7 @@ bool settings_phone_decode(const uint8_t *data, uint16_t len, PhoneSettings *out
   out->reveal_s = data[1] < 1 ? 1 : (data[1] > 30 ? 30 : data[1]);
   out->style = data[2] & STYLE_GHOSTING;
   for (int m = 0; m < MODE_COUNT; m++) {
-    decode_mode(&data[PHONE_CFG_HEADER + m * (4 + MAX_LINES * 4)], &out->mode[m], (Mode)m);
+    decode_mode(&data[PHONE_CFG_HEADER + m * PHONE_CFG_MODE], &out->mode[m], (Mode)m);
   }
   return true;
 }

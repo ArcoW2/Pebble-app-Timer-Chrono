@@ -35,6 +35,16 @@ static bool mode_fits(const ModeLayout *ml, Mode m, Layout *out) {
 
 // ==== INBOX ====
 
+// AppMessage only reaches a running app, so a config saved while the timer
+// was closed would be lost. The watch asks for the stored settings on
+// every launch and the phone replies with its last blob.
+static void request_settings(void *data) {
+  DictionaryIterator *out;
+  if (app_message_outbox_begin(&out) != APP_MSG_OK) return;
+  dict_write_uint8(out, MESSAGE_KEY_CFG_REQ, 1);
+  app_message_outbox_send();
+}
+
 static void send_status(const char *status) {
   DictionaryIterator *out;
   if (app_message_outbox_begin(&out) != APP_MSG_OK) return;
@@ -100,4 +110,5 @@ void comm_open(void) {
   app_message_register_inbox_received(inbox_received);
   app_message_register_inbox_dropped(inbox_dropped);
   app_message_open(INBOX_SIZE, OUTBOX_SIZE);
+  app_timer_register(1500, request_settings, NULL);  // let the link settle
 }
